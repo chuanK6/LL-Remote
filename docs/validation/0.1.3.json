@@ -1,0 +1,19 @@
+{
+    "version":  "0.1.3",
+    "delivery":  "unpacked-directory",
+    "status":  "built",
+    "finalFunctionalTests":  "not_run_at_user_request",
+    "webview2":  "system-evergreen",
+    "distributionData":  "empty",
+    "sunshineManifest":  "utf8_modified_unsigned",
+    "changes":  [
+                    "Local accepting-control requests include the VPN page password",
+                    "Local password format errors no longer invalidate remote credentials",
+                    "Unicode Sunshine configuration paths use the UTF-8 process manifest",
+                    "Moonlight pairing settings flush before the CLI exits",
+                    "First-connection entry stays visible until a successful connection",
+                    "Application advanced settings use larger red text and red buttons",
+                    "Packaging excludes native configuration, private keys and logs"
+                ],
+    "executableSha256":  "C00A5C90145C2434C37BB09A3CC1D20AB2C44A7ED1645CF02EE809C484BF4498"
+}

@@ -1,0 +1,14 @@
+{
+  "desktopBoot": true,
+  "webview2": true,
+  "accountReadFromNative": true,
+  "importedDeviceCount": 3,
+  "existingMoonlightHosts": 2,
+  "noSleepDefault": true,
+  "autostartDefault": false,
+  "setupRequired": true,
+  "emptyCredentialRejected": "INVALID_INPUT",
+  "dataIsolated": true,
+  "powerStatus": "已生效（系统电源规则仍优先）",
+  "mutationsToExistingConfiguration": false
+}

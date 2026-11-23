@@ -1,0 +1,83 @@
+{
+    "version":  "0.1.9",
+    "date":  "2026-11-22",
+    "timezone":  "Asia/Shanghai",
+    "status":  "built_delivered_remaining_tests_by_user_request",
+    "distributionData":  "empty_at_build",
+    "localData":  "copied_latest_local_profile_from_0.1.8",
+    "changes":  [
+                    "Start local NAT and Sunshine before returning acceptance success",
+                    "Prepare VPN firewall asynchronously after the acceptance preference is saved",
+                    "Keep running services when firewall preparation or address binding is not complete",
+                    "Report firewall warnings separately from critical service-start errors",
+                    "Serialize firewall work with stop and quit to prevent late rule recreation",
+                    "Return stopped service state even if firewall restoration needs attention",
+                    "Require matching-rule evidence before claiming group policy restrictions",
+                    "Preserve safe fixed error codes, operation phases and numeric Windows diagnostics"
+                ],
+    "localRegressionEvidence":  {
+                                    "previousVersion":  "0.1.8",
+                                    "actualNatStartsSucceeded":  3,
+                                    "actualNatStartMilliseconds":  [
+                                                                       566,
+                                                                       417,
+                                                                       427
+                                                                   ],
+                                    "firewallFailureFollowedByServiceRollbackMilliseconds":  [
+                                                                                                 5730,
+                                                                                                 4771,
+                                                                                                 5067
+                                                                                             ],
+                                    "firewallPreparationWasCriticalStartupGate":  true,
+                                    "currentMatchingBlockRulesFor0_1_8Sunshine":  0,
+                                    "currentGlobalProgramBlockRules":  0,
+                                    "currentGroupPolicyOverrideReported":  false,
+                                    "historicNativeFirewallExceptionAvailable":  false
+                                },
+    "checks":  {
+                   "rustUnit":  {
+                                    "passed":  53,
+                                    "failed":  0,
+                                    "ignoredNativeScenarios":  4,
+                                    "docTests":  "passed"
+                                },
+                   "typescriptAndProductionFrontendBuild":  "passed",
+                   "productionDesktopBuild":  "passed",
+                   "actualBackendFirewallFailureScenario":  {
+                                                                "status":  "passed_isolated_behavior_checks",
+                                                                "nat":  "local_protocol_fixture",
+                                                                "sunshine":  "real_isolated_process",
+                                                                "firewall":  "non_mutating_response_fixture",
+                                                                "acceptanceReturnsBeforeFirewall":  true,
+                                                                "firewallFailureKeepsServicesRunning":  true,
+                                                                "stopClosesServices":  true,
+                                                                "actualSystemFirewallExecutionClaimed":  false
+                                                            },
+                   "nativeZeroBlockFirewallApplyAndRestore":  "not_run_user_requested_to_test",
+                   "executable":  {
+                                      "sha256":  "86ddf3724156b769e58d3c91cd779f5b1fc95d5302d610efad385d750350ff0b",
+                                      "requestedExecutionLevel":  "requireAdministrator"
+                                  },
+                   "frontendUnit":  {
+                                        "passed":  34,
+                                        "failed":  0
+                                    },
+                   "firewallHelperSha256":  "7a4038ec6866997472fa9537e44eccd0306f47a50792fb7a65a5cf8c2c965ebe"
+               },
+    "unverified":  [
+                       "Two-machine Sunshine reachability, pairing and actual streaming",
+                       "Clean Windows installation and recovery after a Windows restart"
+                   ],
+    "localUpgrade":  {
+                         "version":  "0.1.9",
+                         "sourceVersion":  "0.1.8",
+                         "sourcePreserved":  true,
+                         "copiedFiles":  16,
+                         "excludedNestedLogs":  0,
+                         "credentialsCopied":  true,
+                         "sunshinePathsRebased":  true,
+                         "logsAndCacheExcluded":  true,
+                         "retainedFilesCompared":  15,
+                         "retainedFilesMatch":  true
+                     }
+}

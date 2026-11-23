@@ -1,0 +1,15 @@
+{
+  "x86Host": true,
+  "separatePort": 33373,
+  "profileIsolated": true,
+  "accountMutation": false,
+  "networkConnection": false,
+  "originalExeLaunched": false,
+  "frameTypes": [
+    "start",
+    "0"
+  ],
+  "dataFiles": [
+    "network.dll"
+  ]
+}

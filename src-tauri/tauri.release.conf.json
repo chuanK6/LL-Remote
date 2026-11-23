@@ -1,0 +1,8 @@
+{
+  "bundle": {
+    "windows": {
+      "webviewInstallMode": { "type": "downloadBootstrapper" },
+      "nsis": { "compression": "lzma", "installerHooks": "../component-tools/installer-hooks.nsh" }
+    }
+  }
+}

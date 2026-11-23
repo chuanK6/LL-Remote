@@ -1,0 +1,6 @@
+{
+  "version": "0.1.12",
+  "platform": "Windows x64",
+  "scope": "Production build and portable package",
+  "runtimeAcceptance": "User verification"
+}

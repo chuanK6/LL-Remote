@@ -1,0 +1,100 @@
+{
+  "version": "0.1.7",
+  "date": "2026-11-22",
+  "timezone": "Asia/Shanghai",
+  "status": "built_regression_and_native_firewall_verified",
+  "distributionData": "empty_at_build",
+  "localData": "copied_local_profile_from_0.1.6",
+  "localUpgrade": {
+    "sourcePreserved": true,
+    "copiedFiles": 17,
+    "encryptedCredentialsCopied": true,
+    "retainedDataFilesCompared": 16,
+    "retainedDataMatchesSource": true,
+    "sunshinePathsRebased": true,
+    "logsAndBrowserCacheExcluded": true,
+    "excludedNestedLogs": 2
+  },
+  "changes": [
+    "Display the local VPN address in Jiaoyuelian settings",
+    "Display and copy the access code, connection password and VPN address together",
+    "Prefer the running local server VPN mapping when sharing local connection details",
+    "Discover the peer using device metadata and routes on the connected Wintun interface",
+    "Exclude local IP addresses and avoid using another device ID for access-code connections",
+    "Bypass HTTP proxies for direct Sunshine probes and preserve Sunshine UUID verification",
+    "Prepare narrowly scoped VPN firewall rules before starting Sunshine",
+    "Restore firewall changes when acceptance is stopped or startup is rolled back",
+    "Recheck acceptance state after acquiring the background lock"
+  ],
+  "reachabilityFinding": {
+    "scope": "local_machine_only",
+    "sunshinePublicInboundBlockRules": 2,
+    "protocols": ["TCP", "UDP"],
+    "peerFirewallInspected": false,
+    "soleCauseOfPeerFailureConfirmed": false,
+    "document": "docs/连接流程与组网地址.md"
+  },
+  "checks": {
+    "typescriptAndProductionBuild": "passed",
+    "frontendUnit": { "passed": 20, "failed": 0 },
+    "frontendUI": { "passed": 10, "failed": 0 },
+    "rustUnit": { "passed": 45, "failed": 0, "ignoredNativeScenarios": 4 },
+    "packagedResources": {
+      "checkedNativeBinaries": 138,
+      "resourceFilesCompared": 1597,
+      "missingDependencies": 0,
+      "webview2Delivery": "system-evergreen",
+      "systemBaseline": "Current local Windows; clean Windows acceptance deferred"
+    },
+    "nativeVpnFirewall": {
+      "status": "passed",
+      "administrator": true,
+      "independentTemporaryWintun": true,
+      "adapterCreated": true,
+      "sessionStarted": true,
+      "ipAssigned": true,
+      "dryRun": "passed",
+      "apply": "passed",
+      "programInterfaceAndLocalAddressScope": "passed",
+      "tcpPorts": [47984, 47989, 48010],
+      "udpPorts": [47998, 47999, 48000, 48002],
+      "adminWebAllowed": false,
+      "nonStreamingPortProtection": "passed",
+      "restore": "passed",
+      "originalBlockFiltersRestored": true,
+      "managedRulesRemaining": 0,
+      "adapterClosed": true,
+      "driverUninstalled": false
+    },
+    "actualDesktopAutomation": {
+      "status": "not_completed",
+      "failurePhase": "awaitCdpHttp",
+      "cdpConnected": false,
+      "bootstrapInvoked": false,
+      "distinctNatAndDebugPorts": true,
+      "acceptanceFeatureFailureConfirmed": false,
+      "sourceDataUnchanged": true,
+      "ownedProcessesExited": true,
+      "furtherActualTesting": "user_requested_to_test"
+    },
+    "executable": {
+      "version": "0.1.7",
+      "mainArchitecture": "x64",
+      "engineHostArchitecture": "x86",
+      "requestedExecutionLevel": "requireAdministrator",
+      "executableSha256": "423bd6f1205ebe1212f37ecd238a3c7dc43df496a352dcd47b2b1675be9d206a",
+      "engineHostSha256": "253f74cb0be2ccae2c0f41c7ea4cfcbf9cd2b14b27b2163bcbf7a894cdfe87ec",
+      "firewallHelperSha256": "6a27f2c514e00d5a31df8f39be7f74a245ddf5e5acc5f2dcd731123f2b81c625",
+      "releaseMatchesBuiltExecutable": true,
+      "releaseMatchesFirewallHelper": true
+    }
+  },
+  "unverified": [
+    "Actual 0.1.7 acceptance enable, disable and re-enable with the real saved account",
+    "Actual desktop display of the VPN address and real clipboard copy",
+    "Two-machine address discovery through both connection methods",
+    "Two-machine first PIN pairing, certificate reuse, streaming and disconnection",
+    "Recovery after restarting the application and Windows",
+    "Clean Windows installation"
+  ]
+}

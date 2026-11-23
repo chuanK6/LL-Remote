@@ -1,0 +1,91 @@
+{
+  "version": "0.1.5",
+  "date": "2026-11-22",
+  "timezone": "Asia/Shanghai",
+  "status": "built_and_verified",
+  "distributionData": "empty",
+  "changes": [
+    "Reuse confirmed Sunshine UUID and preserve selected device IDs across reconnects",
+    "Consolidate legacy duplicate devices and retain settings, credentials, and history references",
+    "Preload network.dll by absolute path before the pinned Go Wintun loader",
+    "Request Windows administrator execution for the main application",
+    "Show device network state and wait for native disconnect confirmation",
+    "Display controller PIN and open the controlled computer pairing dialog",
+    "Reuse pairing certificates and accept blank pairing names",
+    "Poll pairing requests in the native background",
+    "Preserve administrator autostart with current-user scheduled tasks"
+  ],
+  "checks": {
+    "typescriptAndProductionBuild": "passed",
+    "frontendUnit": {
+      "passed": 14,
+      "failed": 0
+    },
+    "frontendUI": {
+      "passed": 10,
+      "failed": 0,
+      "viewports": [
+        "1140x844",
+        "960x700 at 150%"
+      ]
+    },
+    "rustUnit": {
+      "passed": 27,
+      "failed": 0,
+      "ignoredNativeScenarios": 4
+    },
+    "nativeLoopbackPairing": {
+      "status": "passed",
+      "tested": [
+        "Real Sunshine pending PIN API",
+        "Blank pairing name confirmation",
+        "Persistent certificate reuse after MoonlightAdapter recreation"
+      ]
+    },
+    "nativeEngineHost": {
+      "status": "passed",
+      "tested": [
+        "x86 initialization in isolated data directory",
+        "network.dll preload and restricted short-name load",
+        "WintunCreateAdapter export resolution",
+        "Native local interface startup"
+      ]
+    },
+    "executable": {
+      "version": "0.1.5",
+      "fileVersion": "0.1.5.0",
+      "mainArchitecture": "x64",
+      "engineHostArchitecture": "x86",
+      "requestedExecutionLevel": "requireAdministrator",
+      "activeCodePage": "UTF-8",
+      "windowsActivationContext": "passed",
+      "executableSha256": "e95473bc59dd68c7481407a166ffeb1b2a376eff4c6b7e16f952e1df6a227255",
+      "engineHostSha256": "553e89f30bf93abb73cf2dd18b0bee09a2b8a47f7c90d8c05c51663458776566"
+    },
+    "packagedResources": {
+      "checkedNativeBinaries": 138,
+      "bundledWebView2Binaries": 0,
+      "webview2Delivery": "system-evergreen",
+      "nestedQtPluginsChecked": true,
+      "pinnedComponentHashesMatch": true,
+      "resourceFilesCompared": 1597,
+      "nsisBundleMarkerAccepted": false,
+      "missingDependencies": 0,
+      "systemBaseline": "Current local Windows; clean Windows acceptance deferred"
+    },
+    "packagedEngineHost": {
+      "status": "passed",
+      "packagedHost": true,
+      "defaultEngineDirectory": true,
+      "unicodeIsolatedDataDirectory": true,
+      "nativeScriptHashMatch": true,
+      "driverPreloadCheck": true
+    }
+  },
+  "unverified": [
+    "Wintun adapter creation on the controller and controlled computers",
+    "Actual cross-device networking and streaming",
+    "Scheduled task registration and application startup after Windows logon",
+    "Clean Windows installation"
+  ]
+}

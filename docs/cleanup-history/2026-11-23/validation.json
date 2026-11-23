@@ -1,0 +1,43 @@
+{
+  "date": "2026-11-23",
+  "workspace": "E:\\LL Remote",
+  "version": "0.1.12",
+  "beforeBytes": 29665203118,
+  "afterBytes": 5898977701,
+  "netBytesReduced": 23766225417,
+  "deletedCandidateBytes": 23808580846,
+  "deletedTargets": 328,
+  "retainedEntriesVerified": 32471,
+  "missing": [],
+  "changed": [],
+  "archivedEvidenceFilesVerified": 805,
+  "directoryLinksRemovedWithoutFollowing": 16,
+  "npmBuild": {
+    "passed": true,
+    "includesTypecheck": true
+  },
+  "bundleVerification": {
+    "passed": true,
+    "checkedNativeBinaries": 138,
+    "resourceFilesCompared": 1597,
+    "missingDependencies": 0
+  },
+  "unitTests": {
+    "passed": 31,
+    "failed": 3,
+    "unhandledErrors": 7,
+    "result": "failed",
+    "causes": [
+      "device-order and pairing bridge mocks omit listenOperationError used during mount",
+      "pairing test expects an empty name, while current application submits the default name"
+    ],
+    "relevantSourceAndTestsUnchangedSinceBeforeCleanup": true
+  },
+  "rustRebuildPerformed": false,
+  "nextRustAndMoonlightBuildRegeneratesCaches": true,
+  "qtDebugSdkPreserved": true,
+  "currentDebugReleaseExecutablesAndSymbolsPreserved": true,
+  "allApplicationDataPreservedInPlace": true,
+  "credentialContentsRead": false,
+  "sizeMetric": "Logical file lengths, excluding junction targets; includes evidence archives and regenerated frontend/test caches"
+}

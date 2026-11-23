@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 400">
+<defs><linearGradient id="sky" x2="0" y2="1"><stop stop-color="#8495b2"/><stop offset=".52" stop-color="#edc7a5"/><stop offset="1" stop-color="#9cafa6"/></linearGradient><linearGradient id="hills" x2="0" y2="1"><stop stop-color="#637d87"/><stop offset="1" stop-color="#253e49"/></linearGradient><radialGradient id="sun"><stop stop-color="#ffe8b4" stop-opacity=".9"/><stop offset="1" stop-color="#fce1be" stop-opacity="0"/></radialGradient></defs>
+<rect width="1000" height="400" fill="url(#sky)"/><ellipse cx="715" cy="147" rx="300" ry="135" fill="url(#sun)"/>
+<path fill="#c2a9a1" opacity=".45" d="m0 53 92-9 40 18 61-13 32 24 73-12 13 17-31 15-134-5-44 11-91-14Zm580 8 117-15 82 14 22-11 100 20 41-11 58 10v18l-120 9-73-14-43 8-167-12z"/>
+<path fill="#82939e" d="m0 235 117-133 131 158 88-105 80 107 76-63 56 63 107-117 123 148 71-100 151 94v113H0Z"/>
+<path fill="#dce1da" d="m64 163 53-61 56 68-42-17-17 13-14-20Zm202 50 70-58 53 70-36-25-13 8-20-29ZM606 199l49-54 56 68-31-21-14 12-19-31Z"/>
+<path fill="#697e87" d="m0 268 132-66 94 102 111-46 169 48 77-51 181 32 91-62 145 91v84H0Z"/>
+<path fill="url(#hills)" d="m0 303 128 27 116-29 186 40 136-33 165 38 113-52 156 39v67H0Z"/>
+<path fill="#c3be9a" opacity=".45" d="m428 301 19 9-27 40 2 50h-66l49-49Z"/>
+<g fill="#354e51" opacity=".75"><path d="m65 255-24 66h17l-19 20h56l-21-21h17ZM126 284l-18 51h12l-15 17h44l-16-17h12ZM809 246l-24 69h18l-23 24h61l-23-24h17ZM912 240l-27 81h18l-23 24h68l-27-24h18Z"/></g>
+<g fill="#243d42"><path d="m18 269-36 97h24l-23 34h83l-34-34h20ZM177 301l-30 76h21l-14 23h55l-21-23h18ZM970 272l-34 97h23l-27 31h68v-76l-12 12Z"/></g>
+</svg>

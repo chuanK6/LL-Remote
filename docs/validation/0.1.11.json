@@ -1,0 +1,24 @@
+{
+  "version": "0.1.11",
+  "date": "2026-11-23",
+  "platform": "Windows x64",
+  "frontendUnitPassed": 34,
+  "browserPassed": 16,
+  "rustUnitPassed": 54,
+  "nativeLoopback": {
+    "video": "Real local Sunshine and Moonlight",
+    "networkControl": "Isolated Jiaoyuelian protocol fixture",
+    "verified": [
+      "Windowed, fullscreen and borderless transitions",
+      "Mouse mode switching",
+      "At 125% Windows scaling, the floating ball stays inside the client edge and follows a 44-pixel window move",
+      "Clicking blank panel space closes the panel",
+      "Disconnect ends the Moonlight process and requests the corresponding Jiaoyuelian disconnect",
+      "Exiting during an active stream stops Moonlight, local Sunshine and the fixture's accepting-control service"
+    ]
+  },
+  "pendingAcceptance": [
+    "Two-computer Jiaoyuelian connection and shutdown on the user's machines",
+    "Mixed-DPI multi-monitor window tracking"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+    "releaseBoot":  true,
+    "portable":  false,
+    "completeEngineResources":  true,
+    "dataRootRelative":  false,
+    "dataIsolated":  true,
+    "directoryContainsSpacesAndChinese":  true,
+    "deviceCount":  3,
+    "existingMoonlightHosts":  2,
+    "fixedRuntimeActuallyUsed":  true,
+    "fixedRuntimeVersion":  "157.0.4341.60",
+    "browserDataFollowsApplication":  true,
+    "noConnectionAttempted":  true,
+    "localInstallAndUninstallPassed":  true,
+    "existingStartupPreserved":  true,
+    "installerLocationRecordPreserved":  true,
+    "externalSunshineServicePreserved":  true
+}

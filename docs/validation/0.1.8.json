@@ -1,0 +1,127 @@
+{
+    "version":  "0.1.8",
+    "date":  "2026-11-22",
+    "timezone":  "Asia/Shanghai",
+    "status":  "built_regressions_verified",
+    "distributionData":  "empty_at_build",
+    "localData":  "copied_latest_local_profile_from_0.1.7",
+    "changes":  [
+                    "Track unconfirmed server startup and explicitly stop it after failure",
+                    "Retry unconfirmed cleanup before another server start",
+                    "Bound a stopped-state reply without cutting short later valid Wintun initialization",
+                    "Discard a WebSocket that fails to provide initial native state",
+                    "Reject server startup during an existing client connection without disconnecting it",
+                    "Keep password edits across background refresh, delayed responses and route changes",
+                    "Isolate drafts and delayed password or acceptance results by confirmed account",
+                    "Preserve existing device positions while updating their current state",
+                    "Consolidate local acceptance and sharing information into a compact area"
+                ],
+    "acceptanceRegressionEvidence":  {
+                                         "scope":  "local_0.1.7_log_and_protocol_regression",
+                                         "firstFailureMilliseconds":  549,
+                                         "firstFailureFrame":  "info",
+                                         "firstNativeReasonAvailable":  false,
+                                         "subsequentReply":  "stopped_state_1_without_initialization_progress",
+                                         "subsequentWaitMilliseconds":  [
+                                                                            70002,
+                                                                            70012
+                                                                        ],
+                                         "firewallStepReached":  false,
+                                         "startupCleanupMissingInOldImplementation":  true,
+                                         "soleInitialFailureCauseConfirmed":  false
+                                     },
+    "checks":  {
+                   "rustUnit":  {
+                                    "passed":  50,
+                                    "failed":  0,
+                                    "ignoredNativeScenarios":  4,
+                                    "docTests":  "passed"
+                                },
+                   "frontendUnit":  {
+                                        "passed":  34,
+                                        "failed":  0
+                                    },
+                   "passwordAndSharingUnit":  {
+                                                  "passed":  16,
+                                                  "failed":  0
+                                              },
+                   "typescript":  "passed",
+                   "productionFrontendBuild":  "passed",
+                   "frontendUI":  {
+                                      "status":  "passed",
+                                      "viewports":  [
+                                                        "1140x844",
+                                                        "960x700 at 150%"
+                                                    ],
+                                      "passed":  10,
+                                      "failed":  0
+                                  },
+                   "assistLayout":  {
+                                        "status":  "passed_browser_layout_only",
+                                        "editingCardCssPixels":  [
+                                                                     570,
+                                                                     336
+                                                                 ],
+                                        "sharingCardCssPixels":  [
+                                                                     570,
+                                                                     257
+                                                                 ],
+                                        "viewports":  [
+                                                          "1140x844",
+                                                          "960x700 at 150%"
+                                                      ],
+                                        "actualDesktopClaimed":  false
+                                    },
+                   "oldHostCleanup":  {
+                                          "exactOldReleaseImageConfirmed":  true,
+                                          "sameEngineHostHashConfirmed":  true,
+                                          "listenerOwnerConfirmed":  true,
+                                          "parentAbsent":  true,
+                                          "noMainOrSunshine":  true,
+                                          "noClientConnection":  true,
+                                          "conditionsRechecked":  true,
+                                          "exitRequestedThroughExistingControlEvent":  true,
+                                          "exitConfirmed":  true,
+                                          "waitMilliseconds":  225,
+                                          "portReleased":  true,
+                                          "forcedTerminationUsed":  false,
+                                          "newEngineStarted":  false
+                                      },
+                   "firewallHelper":  {
+                                          "changedInThisVersion":  false,
+                                          "sha256":  "6a27f2c514e00d5a31df8f39be7f74a245ddf5e5acc5f2dcd731123f2b81c625",
+                                          "previousNativeValidation":  "docs/validation/0.1.7.json"
+                                      },
+                   "executable":  {
+                                      "status":  "built",
+                                      "requestedExecutionLevel":  "requireAdministrator",
+                                      "version":  "0.1.8",
+                                      "sha256":  "0160bfdc17110d5d47c4fbc6e9bf44bf4435c9c4f7edf169b30415e477bdc886",
+                                      "packagedHashMatchesBuild":  true
+                                  },
+                   "packagedResources":  {
+                                             "checkedNativeBinaries":  138,
+                                             "resourceFilesCompared":  1597,
+                                             "missingDependencies":  0,
+                                             "webview2Delivery":  "system-evergreen"
+                                         }
+               },
+    "unverified":  [
+                       "Actual 0.1.8 desktop acceptance enable, disable and re-enable with the user\u0027s saved account",
+                       "Actual desktop sharing clipboard access",
+                       "Two-machine address discovery, PIN pairing, streaming and disconnection",
+                       "Clean Windows installation and recovery after a Windows restart"
+                   ],
+    "localUpgrade":  {
+                         "version":  "0.1.8",
+                         "sourceVersion":  "0.1.7",
+                         "sourcePreserved":  true,
+                         "copiedFiles":  15,
+                         "excludedNestedLogs":  1,
+                         "credentialsCopied":  true,
+                         "sunshinePathsRebased":  true,
+                         "logsAndCacheExcluded":  true,
+                         "retainedFilesCompared":  14,
+                         "retainedFilesMatch":  true
+                     }
+}

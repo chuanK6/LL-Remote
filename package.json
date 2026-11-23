@@ -1,0 +1,43 @@
+{
+  "name": "ll-remote",
+  "version": "0.1.12",
+  "private": true,
+  "type": "module",
+  "description": "LL远程 · Windows 统一远程桌面",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "test": "vitest run",
+    "test:ui": "playwright test",
+    "check": "vue-tsc --noEmit",
+    "desktop": "node scripts/tauri.mjs dev",
+    "desktop:build": "node scripts/tauri.mjs build --no-bundle",
+    "rust:check": "node scripts/cargo.mjs check --manifest-path src-tauri/Cargo.toml",
+    "rust:test": "node scripts/cargo.mjs test --manifest-path src-tauri/Cargo.toml",
+    "probe": "node scripts/probe.mjs",
+    "package:portable": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package.ps1 -Portable"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.9.0",
+    "@tauri-apps/plugin-dialog": "^2.4.0",
+    "lucide-vue-next": "^0.548.0",
+    "pinia": "^3.0.4",
+    "vue": "^3.5.22",
+    "vue-router": "^4.6.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.1",
+    "@tauri-apps/cli": "^2.9.0",
+    "@types/node": "^24.10.0",
+    "@types/ws": "^8.18.1",
+    "@vitejs/plugin-vue": "^6.0.2",
+    "@vue/test-utils": "^2.4.6",
+    "jsdom": "^27.2.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.2.2",
+    "vitest": "^3.2.4",
+    "vue-tsc": "^3.1.4",
+    "ws": "^8.18.3"
+  }
+}

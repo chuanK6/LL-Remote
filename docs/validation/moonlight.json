@@ -1,0 +1,8 @@
+{
+  "settingsDirect": true,
+  "protocol": 1,
+  "tokenRejected": true,
+  "realSession": false,
+  "metrics": {},
+  "isolatedNativeConfiguration": true
+}

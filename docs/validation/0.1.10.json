@@ -1,0 +1,38 @@
+{
+  "version": "0.1.10",
+  "date": "2026-11-23",
+  "timezone": "Asia/Shanghai",
+  "delivery": {
+    "platform": "Windows x64",
+    "archive": "LLRemote-Portable-x64-0.1.10.zip",
+    "directory": "LLRemote-Portable-x64-0.1.10",
+    "data": "empty at packaging",
+    "changelog": "CHANGELOG.md",
+    "runtimeLogs": "Data/logs"
+  },
+  "deviceListFix": {
+    "finding": "A saved local removal could suppress a same-account host that Jiaoyuelian reported online.",
+    "behavior": "Deleting a device removes its local record. Legacy deletion markers are ignored and omitted on the next save. The current directory restores visibility of same-account online devices.",
+    "sourceReview": "completed",
+    "postFixRuntimeAcceptance": "not run at user request"
+  },
+  "previousValidation": {
+    "scope": "0.1.10 candidate before the same-account device list correction",
+    "frontendUnitPassed": 34,
+    "browserPassed": 16,
+    "rustUnitPassed": 54,
+    "rustIgnored": 4,
+    "windowsFirewallBeforeVersionBump": {
+      "case": "Program-specific TCP/UDP rules with GUID names or arbitrary names and explicit streaming ports",
+      "apply": "passed",
+      "reapply": "passed",
+      "restore": "passed"
+    }
+  },
+  "finalBuild": "production build and complete portable package",
+  "pendingAcceptance": [
+    "Start the final portable package on Windows.",
+    "Confirm that a currently online same-account device appears after refreshing the device list, including a device previously removed locally.",
+    "Connect from the controller to the other computer and verify the desktop stream."
+  ]
+}

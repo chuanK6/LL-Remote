@@ -1,0 +1,55 @@
+{
+  "appVersion": "0.1.2",
+  "delivery": "unpacked-directory",
+  "webview2": {
+    "mode": "system-evergreen",
+    "bundled": false,
+    "systemVersionActuallyUsed": "157.0.4341.60",
+    "missingRuntimePromptImplemented": true,
+    "missingRuntimeEnvironmentTested": false
+  },
+  "startup": {
+    "releaseBoot": true,
+    "portable": true,
+    "completeEngineResources": true,
+    "dataRootRelative": true,
+    "dataIsolated": true,
+    "directoryContainsSpacesAndChinese": false,
+    "deviceCount": 1,
+    "existingMoonlightHosts": 0,
+    "systemRuntimeActuallyUsed": true,
+    "systemRuntimeVersion": "157.0.4341.60",
+    "inheritedRuntimeOverrideIgnored": true,
+    "browserDataFollowsApplication": true,
+    "noConnectionAttempted": true,
+    "testCopyIsolated": true,
+    "onlyInstanceIdentifierPatched": true,
+    "actualUserDataLoaded": false
+  },
+  "resources": {
+    "checkedNativeBinaries": 138,
+    "bundledWebView2Binaries": 0,
+    "webview2Delivery": "system-evergreen",
+    "nestedQtPluginsChecked": true,
+    "pinnedComponentHashesMatch": true,
+    "resourceFilesCompared": 1597,
+    "nsisBundleMarkerAccepted": false,
+    "missingDependencies": 0,
+    "systemBaseline": "Current local Windows; clean Windows acceptance deferred"
+  },
+  "existingData": {
+    "preserved": true,
+    "filesVerified": 204,
+    "credentialContentsRead": false,
+    "locationUnchanged": true
+  },
+  "package": {
+    "bytes": 359893438,
+    "mebibytes": 343.22,
+    "retiredBundledRuntimeBytes": 711058264
+  },
+  "optionalWorkspaceCleanup": {
+    "performed": false,
+    "reason": "Automatic approval review rejected removal of the retired build runtime and test copy with 'blocked by policy'. Both remain outside the delivery directory."
+  }
+}

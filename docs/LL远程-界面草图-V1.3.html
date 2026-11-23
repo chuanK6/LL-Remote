@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LL远程 · V1.3 界面方案预览</title>
+  <link rel="stylesheet" href="LL远程-界面样式-V1.3.css">
+</head>
+<body>
+<svg class="svg-defs" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <defs>
+    <linearGradient id="land-sky" x2="0" y2="1"><stop stop-color="#8495b2"/><stop offset=".52" stop-color="#edc7a5"/><stop offset="1" stop-color="#9cafa6"/></linearGradient>
+    <linearGradient id="land-hills" x2="0" y2="1"><stop stop-color="#637d87"/><stop offset="1" stop-color="#253e49"/></linearGradient>
+    <radialGradient id="land-sun"><stop stop-color="#ffe8b4" stop-opacity=".9"/><stop offset="1" stop-color="#fce1be" stop-opacity="0"/></radialGradient>
+  </defs>
+  <symbol id="landscape" viewBox="0 0 1000 400">
+    <rect width="1000" height="400" fill="url(#land-sky)"/><ellipse cx="715" cy="147" rx="300" ry="135" fill="url(#land-sun)"/>
+    <path fill="#c2a9a1" opacity=".45" d="m0 53 92-9 40 18 61-13 32 24 73-12 13 17-31 15-134-5-44 11-91-14Zm580 8 117-15 82 14 22-11 100 20 41-11 58 10v18l-120 9-73-14-43 8-167-12z"/>
+    <path fill="#82939e" d="m0 235 117-133 131 158 88-105 80 107 76-63 56 63 107-117 123 148 71-100 151 94v113H0Z"/>
+    <path fill="#dce1da" d="m64 163 53-61 56 68-42-17-17 13-14-20Zm202 50 70-58 53 70-36-25-13 8-20-29ZM606 199l49-54 56 68-31-21-14 12-19-31Z"/>
+    <path fill="#697e87" d="m0 268 132-66 94 102 111-46 169 48 77-51 181 32 91-62 145 91v84H0Z"/>
+    <path fill="url(#land-hills)" d="m0 303 128 27 116-29 186 40 136-33 165 38 113-52 156 39v67H0Z"/>
+    <path fill="#c3be9a" opacity=".45" d="m428 301 19 9-27 40 2 50h-66l49-49Z"/>
+    <g fill="#354e51" opacity=".75"><path d="m65 255-24 66h17l-19 20h56l-21-21h17ZM126 284l-18 51h12l-15 17h44l-16-17h12ZM809 246l-24 69h18l-23 24h61l-23-24h17ZM912 240l-27 81h18l-23 24h68l-27-24h18Z"/></g>
+    <g fill="#243d42"><path d="m18 269-36 97h24l-23 34h83l-34-34h20ZM177 301l-30 76h21l-14 23h55l-21-23h18ZM970 272l-34 97h23l-27 31h68v-76l-12 12Z"/></g>
+  </symbol>
+  <symbol id="icon-monitor" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 21h8M12 18v3"/></symbol>
+  <symbol id="icon-devices" viewBox="0 0 24 24"><rect x="2" y="5" width="12" height="9" rx="1"/><path d="M4 17h8M8 14v3"/><rect x="15" y="10" width="7" height="10" rx="1"/></symbol>
+  <symbol id="icon-assist" viewBox="0 0 24 24"><path d="M2 9V4h6M16 4h6v5M22 15v5h-6M8 20H2v-5"/><rect x="7" y="8" width="10" height="8" rx="1"/></symbol>
+  <symbol id="icon-settings" viewBox="0 0 24 24"><path d="m9 2 6 0 1 4 4 2-1 5 2 3-4 4-4-1-3 2-4-3 1-4-3-3 2-4 3-1z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="icon-stats" viewBox="0 0 24 24"><path d="M3 13h4l3-7 4 13 3-6h4"/><rect x="1" y="2" width="22" height="20" rx="2"/></symbol>
+  <symbol id="icon-audio" viewBox="0 0 24 24"><path d="M3 9h4l5-4v14l-5-4H3zM16 8a6 6 0 0 1 0 8M19 5a10 10 0 0 1 0 14"/></symbol>
+  <symbol id="icon-user" viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M4 20c0-8 16-8 16 0"/></symbol>
+  <symbol id="icon-star" viewBox="0 0 24 24"><path d="m12 3 2.6 5.3 5.9.9-4.2 4.1 1 5.9-5.3-2.8-5.3 2.8 1-5.9-4.2-4.1 5.9-.9z"/></symbol>
+</svg>
+
+<div class="shell" id="appShell">
+  <header class="topbar">
+    <div class="brand"><svg viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="7" fill="#3785ff"/><path d="M7 7v14h6M16 7v14h6" fill="none" stroke="white" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span>LL远程</span></div>
+    <div class="top-actions">
+      <button class="account-button" data-view="account" aria-controls="pageContent"><svg class="icon" aria-hidden="true"><use href="#icon-user"/></svg>皎月连账号<span class="chevron">⌄</span></button>
+      <a class="signin-button" id="signinButton" href="https://www.natpierce.cn/pc/sign/index.html" target="_blank" rel="noopener noreferrer">签到 ↗</a>
+      <span class="window-divider"></span><button class="window-button" data-action="window" aria-label="最小化">－</button><button class="window-button" data-action="window" aria-label="关闭窗口">×</button>
+    </div>
+  </header>
+  <aside class="sidebar" aria-label="主导航">
+    <div class="section-title"><svg class="icon" aria-hidden="true"><use href="#icon-devices"/></svg>我的设备<span class="chevron">⌃</span></div>
+    <div id="deviceNavigation"></div>
+    <button class="nav-button" data-view="devices" aria-controls="pageContent"><span class="nav-symbol all-symbol"><i></i><i></i><i></i><i></i></span>全部设备</button>
+    <div class="section-title next-section"><svg class="icon" aria-hidden="true"><use href="#icon-assist"/></svg>远程协助<span class="chevron">⌃</span></div>
+    <button class="nav-button" data-view="assist" aria-controls="pageContent"><span class="nav-symbol"><svg class="icon" aria-hidden="true"><use href="#icon-assist"/></svg></span>开始协助</button>
+    <button class="nav-button" data-view="favorites" aria-controls="pageContent"><span class="nav-symbol"><svg class="icon filled" aria-hidden="true"><use href="#icon-star"/></svg></span>收藏设备</button>
+    <div class="section-title app-section">应用功能<span class="chevron">⌃</span></div>
+    <button class="nav-button app-nav" data-view="jiaoyue" aria-controls="pageContent"><span class="app-tag">皎</span>皎月连</button>
+    <button class="nav-button app-nav" data-view="moonlight" aria-controls="pageContent"><span class="app-tag moon">M</span>Moonlight</button>
+    <button class="nav-button app-nav" data-view="sunshine" aria-controls="pageContent"><span class="app-tag sun">S</span>Sunshine</button>
+    <div class="footer-nav"><button data-view="settings" aria-controls="pageContent"><svg class="icon" aria-hidden="true"><use href="#icon-settings"/></svg>设置</button></div>
+  </aside>
+  <main class="workspace" id="pageContent" aria-live="polite"></main>
+</div>
+
+<section class="remote-stage" id="remoteStage" hidden data-mode="fullscreen" aria-label="远控会话预览">
+  <div class="remote-topline"><span>LL远程 · <b id="remoteDevice">大娃家</b></span><span id="remoteModeLabel">全屏 · 示例远控画面</span></div>
+  <div class="remote-desktop">
+    <svg class="remote-wallpaper" viewBox="0 0 1000 400" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><use href="#landscape"/></svg>
+    <div class="desktop-icons"><span><svg class="icon" aria-hidden="true"><use href="#icon-monitor"/></svg>此电脑</span><span><svg class="icon" aria-hidden="true"><use href="#icon-settings"/></svg>设置</span></div>
+    <div class="remote-title"><div class="remote-logo">LL</div><h1>远程桌面</h1><p>点击悬浮球调整本次连接</p><small>界面方案预览 · 未建立真实连接</small></div>
+    <div class="remote-taskbar"><span class="windows-logo">⊞</span><span>远程电脑桌面 · 示例</span><span class="taskbar-end">LL远程</span></div>
+  </div>
+  <button id="floatBall" class="float-ball" aria-label="打开会话悬浮球设置" aria-expanded="false" title="点击设置 · 拖动移动">LL</button>
+  <section class="float-panel" id="floatPanel" hidden aria-label="本次远控设置">
+    <div class="float-head"><div><h2>本次连接</h2><small id="sessionSummary">1920 × 1080 · 15 Mbps · 60 FPS</small></div><button data-session="close-panel" class="plain-icon" aria-label="收起悬浮面板">×</button></div>
+    <div class="float-label">画质 · 三项独立设置</div>
+    <div class="float-row"><label for="sessionResolution">分辨率</label><select id="sessionResolution"><option value="1280x720">1280 × 720</option><option value="1920x1080" selected>1920 × 1080</option><option value="2560x1440">2560 × 1440</option><option value="3840x2160">3840 × 2160</option><option value="custom">自定义</option></select><button class="small-button" data-session="apply-resolution">应用</button></div>
+    <div class="custom-resolution" id="customResolution" hidden><input id="customWidth" type="number" min="320" step="2" value="1920" aria-label="自定义宽度"><span>×</span><input id="customHeight" type="number" min="200" step="2" value="1080" aria-label="自定义高度"></div>
+    <div class="float-row"><label for="sessionBitrate">码率</label><div class="number-unit"><input id="sessionBitrate" type="number" min="1" max="500" step="1" value="15"><span>Mbps</span></div><button class="small-button" data-session="apply-bitrate">应用</button></div>
+    <div class="float-row"><label for="sessionFps">帧率</label><div class="number-unit"><input id="sessionFps" type="number" min="1" max="360" step="1" value="60"><span>FPS</span></div><button class="small-button" data-session="apply-fps">应用</button></div>
+    <p class="session-hint" id="sessionHint">单独应用一项，会保留另外两项。实际内核需要时会短暂重连。</p>
+    <div class="float-label">鼠标控制</div>
+    <div class="segments" id="mouseModes"><button data-session="mouse-mode" data-mouse-mode="game">游戏鼠标</button><button class="active" data-session="mouse-mode" data-mouse-mode="office">办公鼠标</button></div>
+    <div class="float-label">窗口模式</div>
+    <div class="segments" id="windowModes"><button class="active" data-session="mode" data-mode="fullscreen">全屏</button><button data-session="mode" data-mode="windowed">窗口</button><button data-session="mode" data-mode="borderless">无边框</button></div>
+    <div class="float-label">音频设置</div>
+    <div class="float-volume"><label for="sessionVolume">音量</label><input id="sessionVolume" type="range" min="0" max="100" value="75"><span id="volumeValue">75%</span><button class="small-button" data-session="mute" id="muteButton">静音</button></div>
+    <div class="float-row output-row"><label for="sessionOutput">输出</label><select id="sessionOutput"><option>系统默认设备</option><option>耳机（示例）</option><option>扬声器（示例）</option></select></div>
+    <div class="monitor-row"><span>性能监测</span><button class="toggle" id="monitorToggle" data-session="monitor" role="switch" aria-label="性能监测" aria-checked="false"><span></span></button></div>
+    <button class="disconnect-button" data-session="disconnect">断开连接</button>
+  </section>
+  <section class="performance-panel" id="performancePanel" hidden aria-label="性能监测示例"><div class="performance-title">性能监测 <small>示例数据</small></div><dl><dt>帧率</dt><dd>60 FPS</dd><dt>实际码率</dt><dd>14.8 Mbps</dd><dt>网络延迟</dt><dd>18 ms</dd><dt>解码延迟</dt><dd>3.2 ms</dd><dt>丢帧比例</dt><dd>0.1%</dd></dl></section>
+</section>
+<div class="device-editor-backdrop" id="deviceEditorBackdrop" hidden>
+  <section class="device-editor" role="dialog" aria-modal="true" aria-labelledby="deviceEditorTitle">
+    <div class="editor-heading"><h2 id="deviceEditorTitle">编辑设备</h2><button type="button" class="plain-icon" data-editor="cancel" aria-label="关闭设备编辑弹窗">×</button></div>
+    <form id="deviceEditorForm" novalidate>
+      <label class="form-label" for="editorName">设备名称</label>
+      <input class="text-input" id="editorName" required maxlength="64" autocomplete="off">
+      <div class="editor-favorite-row"><label for="editorFavorite">收藏设备</label><input type="checkbox" id="editorFavorite"></div>
+      <div class="editor-wallpaper-heading">设备壁纸</div>
+      <div class="editor-wallpaper-preview" id="editorWallpaperPreview"></div>
+      <div class="wallpaper-actions"><button type="button" class="secondary" data-editor="choose-wallpaper">更换壁纸</button><button type="button" class="tiny-button" data-editor="default-wallpaper">恢复默认</button><span id="editorWallpaperName">默认壁纸</span></div>
+      <input type="file" id="editorWallpaperInput" accept="image/png,image/jpeg,image/webp" hidden>
+      <div id="editorFeedback"></div>
+      <div class="page-actions"><button class="secondary" type="button" data-editor="cancel">取消</button><button class="primary" type="submit">保存</button></div>
+    </form>
+  </section>
+</div>
+<div class="preview-note">界面方案 V1.3 · 示例数据</div>
+<div class="toast" id="toast" role="status"></div>
+<script src="LL远程-界面交互-V1.3.js"></script>
+</body>
+</html>

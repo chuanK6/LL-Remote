@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "moonlight": {
+    "version": "6.2.0",
+    "executable": "Moonlight/Moonlight.exe",
+    "extensionProtocol": 1,
+    "sha256": "ffc878cf95ae3c36449b14d0958fb3464210691158a2afcd2f1624229cce2898"
+  },
+  "sunshine": {
+    "version": "2026.914.233613",
+    "executable": "Sunshine/sunshine.exe",
+    "sha256": "10c9bda290cbc539f1d2e2f52ae4c475189c4308869c358ce5d04be34448bb31",
+    "upstreamSha256": "8e2c4627318432b67520a9de7cfd8ac089068a2873ccf8443756733a1af7d571",
+    "runtimeManifest": "utf8"
+  },
+  "jiaoyuelian": {
+    "version": "1.06",
+    "executable": "Jiaoyuelian/natpierce.exe",
+    "protocol": "v1.06-delimited",
+    "port": 33272,
+    "scriptSha256": "e903a5204acbc7edb425d71987786eaaf17e03f5b481ba443067254177a5a045",
+    "sha256": "7c2cfb58ad8c680635640fc53e26afdabfa326e670f39ec4e0e87ca96e2c11c4"
+  }
+}

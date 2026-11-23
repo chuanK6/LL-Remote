@@ -1,0 +1,82 @@
+# Dependencies, SDKs, caches and generated output
+/node_modules/
+/dist/
+/src-tauri/target/
+/src-tauri/gen/
+/.work/
+/.tools/
+/third-party/sources/
+/test-results/
+/playwright-report/
+/coverage/
+__pycache__/
+*.py[cod]
+
+# Prepared native resources: keep their descriptions and pinned manifest
+/engines/**
+!/engines/manifest.json
+!/engines/README.md
+/runtimes/**
+!/runtimes/README.md
+/src-tauri/runtimes/
+/release/
+
+# User data, local environment and credentials
+Data/
+credentials/
+/config
+.env
+.env.*
+!.env.example
+!.env.sample
+*.local
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Built programs, native objects, delivery/source archives and logs
+*.exe
+*.dll
+*.pdb
+*.obj
+*.lib
+*.rlib
+*.rmeta
+*.msi
+*.msix
+*.zip
+*.7z
+*.rar
+*.cab
+*.tar
+*.tar.gz
+*.tgz
+*.log
+*.etl
+*.dmp
+
+# Local inventories and full preservation snapshots are reproducible
+/docs/workspace-*.json
+
+# Keep cleanup notes, original helper scripts and concise summaries;
+# exclude raw evidence and copied third-party resource trees.
+/docs/cleanup-history/**
+!/docs/cleanup-history/**/
+!/docs/cleanup-history/**/*.md
+!/docs/cleanup-history/**/*.py
+!/docs/cleanup-history/**/*.ps1
+!/docs/cleanup-history/**/*.mjs
+!/docs/cleanup-history/**/validation.json
+!/docs/cleanup-history/**/retained-verification.json
+!/docs/cleanup-history/**/workspace-cleanup-preservation.json
+
+/docs/cleanup-evidence/**
+!/docs/cleanup-evidence/**/
+!/docs/cleanup-evidence/**/*.md
+!/docs/cleanup-evidence/**/*.py
+!/docs/cleanup-evidence/**/*.ps1
+!/docs/cleanup-evidence/**/*.mjs
+/docs/cleanup-evidence/**/engines/**
+/docs/cleanup-evidence/**/notices/**
+/docs/cleanup-evidence/**/component-tools/**

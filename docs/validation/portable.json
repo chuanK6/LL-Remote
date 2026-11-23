@@ -1,0 +1,14 @@
+{
+  "releaseBoot": true,
+  "portable": true,
+  "completeEngineResources": true,
+  "dataRootRelative": true,
+  "dataIsolated": true,
+  "directoryContainsSpacesAndChinese": true,
+  "deviceCount": 0,
+  "existingMoonlightHosts": 0,
+  "fixedRuntimeActuallyUsed": true,
+  "fixedRuntimeVersion": "157.0.4341.60",
+  "browserDataFollowsApplication": true,
+  "noConnectionAttempted": true
+}

@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "performance",
+  "description": "性能监测窗口只接收本次远控的性能数据。",
+  "windows": ["session-performance"],
+  "permissions": ["core:event:allow-listen", "core:event:allow-unlisten"]
+}

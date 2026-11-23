@@ -1,0 +1,16 @@
+{
+    "version":  "0.1.4",
+    "status":  "built",
+    "finalFunctionalTests":  "not_run_at_user_request",
+    "distributionData":  "empty",
+    "webview2":  "system-evergreen",
+    "changes":  [
+                    "Normal-size red advanced settings",
+                    "Read local connection and web access passwords from Jiaoyuelian",
+                    "DPAPI fallback preserves password input across page changes",
+                    "Wintun failure retries with an elevated owned network host",
+                    "The main UI remains under the original Windows user",
+                    "External network processes are not forcibly stopped"
+                ],
+    "executableSha256":  "704B3D6AAE1593BDA1315D91F2D78B8FBEFB9CA9796C104C616E1C2CA811EAD6"
+}

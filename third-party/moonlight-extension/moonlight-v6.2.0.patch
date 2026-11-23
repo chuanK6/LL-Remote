@@ -1,0 +1,638 @@
+diff --git a/app/app.pro b/app/app.pro
+index 1c0661b..62ac905 100644
+--- a/app/app.pro
++++ b/app/app.pro
+@@ -165,6 +165,9 @@ macx {
+     CONFIG += ffmpeg
+ }
+ 
++SOURCES += llremote/llremotebridge.cpp
++HEADERS += llremote/llremotebridge.h
++
+ SOURCES += \
+     backend/nvaddress.cpp \
+     backend/nvapp.cpp \
+@@ -551,7 +554,7 @@ win32 {
+     QMAKE_TARGET_PRODUCT = Moonlight
+ 
+     CONFIG -= embed_manifest_exe
+-    QMAKE_LFLAGS += /MANIFEST:embed /MANIFESTINPUT:$${PWD}/Moonlight.exe.manifest
++    QMAKE_LFLAGS += /MANIFEST:embed /MANIFESTINPUT:$$shell_quote($$system_path($$PWD/Moonlight.exe.manifest))
+ }
+ macx {
+     # Create Info.plist in object dir with the correct version string
+diff --git a/app/backend/computermanager.cpp b/app/backend/computermanager.cpp
+index 96177da..2412273 100644
+--- a/app/backend/computermanager.cpp
++++ b/app/backend/computermanager.cpp
+@@ -807,7 +807,7 @@ private:
+             if (!m_Mdns) {
+                 unsigned int portTestResult;
+ 
+-                if (m_ComputerManager->m_Prefs->detectNetworkBlocking) {
++                if (!qEnvironmentVariableIsSet("LLREMOTE_EXACT_ADDRESS") && m_ComputerManager->m_Prefs->detectNetworkBlocking) {
+                     // We failed to connect to the specified PC. Let's test to make sure this network
+                     // isn't blocking Moonlight, so we can tell the user about it.
+                     portTestResult = LiTestClientConnectivity("qt.conntest.moonlight-stream.org", 443,
+@@ -854,6 +854,13 @@ private:
+ 
+         // Create initial newComputer using HTTP serverinfo with no pinned cert
+         NvComputer* newComputer = new NvComputer(http, serverInfo);
++        const bool exactAddress = !m_Mdns && qEnvironmentVariableIsSet("LLREMOTE_EXACT_ADDRESS");
++        const QString expectedUuid = qEnvironmentVariable("LLREMOTE_TARGET_UUID");
++        if (exactAddress && !expectedUuid.isEmpty() && newComputer->uuid.compare(expectedUuid, Qt::CaseInsensitive) != 0) {
++            delete newComputer;
++            emit computerAddCompleted(false, false);
++            return;
++        }
+         http.setTrueUid(!newComputer->isNvidiaServerSoftware);
+ 
+         // Check if we have a record of this host UUID to pull the pinned cert
+@@ -876,9 +883,27 @@ private:
+ 
+             // Update the polled computer with the HTTPS information
+             NvComputer httpsComputer(http, serverInfo);
++            if (exactAddress && httpsComputer.uuid != newComputer->uuid) {
++                delete newComputer;
++                emit computerAddCompleted(false, false);
++                return;
++            }
+             newComputer->update(httpsComputer);
+         }
+ 
++        if (exactAddress && qgetenv("LLREMOTE_EXACT_ADDRESS") == "stream" &&
++            newComputer->pairState == NvComputer::PS_PAIRED) {
++            // Streaming normally receives an app list from the polling thread.
++            // Fetch it from the verified address before notifying the launcher.
++            try {
++                newComputer->appList = http.getAppList();
++            } catch (const std::exception&) {
++                delete newComputer;
++                emit computerAddCompleted(false, false);
++                return;
++            }
++        }
++
+         // Update addresses depending on the context
+         if (m_Mdns) {
+             // Only update local address if we actually reached the PC via this address.
+@@ -948,7 +973,7 @@ private:
+                 }
+ 
+                 // Tell our client if something changed
+-                if (changed) {
++                if (changed || exactAddress) {
+                     qInfo() << existingComputer->name << "is now at" << existingComputer->activeAddress.toString();
+                     emit computerStateChanged(existingComputer);
+                 }
+@@ -965,7 +990,7 @@ private:
+ 
+                 // If this wasn't added via mDNS but it is a RFC 1918 IPv4 address and not a VPN,
+                 // go ahead and do the STUN request now to populate an external address.
+-                if (!m_Mdns && addressIsSiteLocalV4 && newComputer->getActiveAddressReachability() != NvComputer::RI_VPN) {
++                if (!m_Mdns && !exactAddress && addressIsSiteLocalV4 && newComputer->getActiveAddressReachability() != NvComputer::RI_VPN) {
+                     quint32 addr;
+                     int err = LiFindExternalAddressIP4("stun.moonlight-stream.org", 3478, &addr);
+                     if (err == 0) {
+diff --git a/app/backend/computerseeker.cpp b/app/backend/computerseeker.cpp
+index 574098a..1b1d850 100644
+--- a/app/backend/computerseeker.cpp
++++ b/app/backend/computerseeker.cpp
+@@ -1,13 +1,16 @@
+ #include "computerseeker.h"
+ #include "computermanager.h"
++#include "nvhttp.h"
+ #include <QTimer>
++#include <QHostAddress>
++#include <QUrl>
+ 
+ ComputerSeeker::ComputerSeeker(ComputerManager *manager, QString computerName, QObject *parent)
+     : QObject(parent), m_ComputerManager(manager), m_ComputerName(computerName),
+       m_TimeoutTimer(new QTimer(this))
+ {
+     // If we know this computer, send a WOL packet to wake it up in case it is asleep.
+-    NvComputer* matchingComputer = findMatchingComputer();
++    NvComputer* matchingComputer = qEnvironmentVariableIsSet("LLREMOTE_EXACT_ADDRESS") ? nullptr : findMatchingComputer();
+     if (matchingComputer) {
+         matchingComputer->wake();
+     }
+@@ -28,6 +31,12 @@ void ComputerSeeker::start(int timeout)
+     //
+     // NB: We don't do this unconditionally because it will wipe out the user's
+     // manual address if they pass another reachable hostname/address.
++    if (qEnvironmentVariableIsSet("LLREMOTE_EXACT_ADDRESS")) {
++        // Refresh the current address and reuse certificates by Sunshine UUID.
++        // Polling saved addresses can otherwise choose a stale route or a namesake.
++        m_ComputerManager->addNewHostManually(m_ComputerName);
++        return;
++    }
+     if (!findMatchingComputer()) {
+         m_ComputerManager->addNewHostManually(m_ComputerName);
+     }
+@@ -41,7 +50,9 @@ void ComputerSeeker::onComputerUpdated(NvComputer *computer)
+         return;
+     }
+     if (matchComputer(computer) && isOnline(computer)) {
+-        m_ComputerManager->stopPollingAsync();
++        if (!qEnvironmentVariableIsSet("LLREMOTE_EXACT_ADDRESS")) {
++            m_ComputerManager->stopPollingAsync();
++        }
+         m_TimeoutTimer->stop();
+         emit computerFound(computer);
+     }
+@@ -49,6 +60,24 @@ void ComputerSeeker::onComputerUpdated(NvComputer *computer)
+ 
+ bool ComputerSeeker::matchComputer(NvComputer *computer) const
+ {
++    if (qEnvironmentVariableIsSet("LLREMOTE_EXACT_ADDRESS")) {
++        const QUrl target = QUrl::fromUserInput("moonlight://" + m_ComputerName);
++        const QString expectedUuid = qEnvironmentVariable("LLREMOTE_TARGET_UUID");
++        const auto active = computer->activeAddress;
++        const auto matchesAddress = [&](const QString& host, int port) {
++            if (active.port() != port) return false;
++            const QHostAddress ip(host);
++            return ip.isNull() ? active.address().compare(host, Qt::CaseInsensitive) == 0
++                               : QHostAddress(active.address()) == ip;
++        };
++        if (!expectedUuid.isEmpty() && computer->uuid.compare(expectedUuid, Qt::CaseInsensitive) != 0)
++            return false;
++        if (QHostAddress(m_ComputerName).protocol() == QAbstractSocket::IPv6Protocol)
++            return matchesAddress(m_ComputerName, DEFAULT_HTTP_PORT);
++        return target.isValid() && !target.host().isEmpty()
++            && matchesAddress(target.host(), target.port(DEFAULT_HTTP_PORT));
++    }
++
+     QString value = m_ComputerName.toLower();
+ 
+     if (computer->name.toLower() == value || computer->uuid.toLower() == value) {
+@@ -85,6 +114,8 @@ bool ComputerSeeker::isOnline(NvComputer *computer) const
+ void ComputerSeeker::onTimeout()
+ {
+     m_TimeoutTimer->stop();
+-    m_ComputerManager->stopPollingAsync();
++    if (!qEnvironmentVariableIsSet("LLREMOTE_EXACT_ADDRESS")) {
++        m_ComputerManager->stopPollingAsync();
++    }
+     emit errorTimeout();
+ }
+diff --git a/app/main.cpp b/app/main.cpp
+index 2b701d7..8f22fb3 100644
+--- a/app/main.cpp
++++ b/app/main.cpp
+@@ -45,6 +45,7 @@
+ #include "cli/pair.h"
+ #include "cli/commandlineparser.h"
+ #include "path.h"
++#include "llremote/llremotebridge.h"
+ #include "utils.h"
+ #include "gui/computermodel.h"
+ #include "gui/appmodel.h"
+@@ -420,6 +421,14 @@ void configureSignalHandlers()
+ 
+ int main(int argc, char *argv[])
+ {
++    bool llSettings = false;
++    for (int i = 1; i < argc; ++i) {
++        if (strcmp(argv[i], "--ll-settings") == 0) {
++            llSettings = true;
++            for (int n = i; n < argc; ++n) argv[n] = argv[n + 1];
++            --argc; --i;
++        }
++    }
+     SDL_SetMainReady();
+ 
+     // Set the app version for the QCommandLineParser's showVersion() command
+@@ -432,7 +441,15 @@ int main(int argc, char *argv[])
+     QCoreApplication::setOrganizationDomain("moonlight-stream.com");
+     QCoreApplication::setApplicationName("Moonlight");
+ 
+-    if (QFile(QDir::currentPath() + "/portable.dat").exists()) {
++    const QString llDataPath = QString::fromUtf8(qgetenv("LLREMOTE_MOONLIGHT_DATA_DIR"));
++    if (!llDataPath.isEmpty()) {
++        QDir().mkpath(llDataPath);
++        QSettings::setDefaultFormat(QSettings::IniFormat);
++        QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, llDataPath);
++        QSettings::setPath(QSettings::IniFormat, QSettings::SystemScope, llDataPath);
++        Path::initialize(true);
++    }
++    else if (QFile(QDir::currentPath() + "/portable.dat").exists()) {
+         QSettings::setDefaultFormat(QSettings::IniFormat);
+         QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, QDir::currentPath());
+         QSettings::setPath(QSettings::IniFormat, QSettings::SystemScope, QDir::currentPath());
+@@ -754,6 +771,7 @@ int main(int argc, char *argv[])
+     }
+ 
+     QGuiApplication app(argc, argv);
++    LLRemoteBridge::start();
+ 
+ #ifdef Q_OS_DARWIN
+     // macOS defaults "Keyboard navigation" to text fields and lists only, which
+@@ -986,10 +1004,11 @@ int main(int argc, char *argv[])
+     QQmlApplicationEngine engine;
+     QString initialView;
+     bool hasGUI = true;
++    ComputerManager* llCliManager = nullptr;
+ 
+     switch (commandLineParserResult) {
+     case GlobalCommandLineParser::NormalStartRequested:
+-        initialView = "qrc:/gui/PcView.qml";
++        initialView = llSettings ? "qrc:/gui/SettingsView.qml" : "qrc:/gui/PcView.qml";
+         break;
+     case GlobalCommandLineParser::StreamRequested:
+         {
+@@ -1019,6 +1038,13 @@ int main(int argc, char *argv[])
+             pairParser.parse(app.arguments());
+             auto launcher = new CliPair::Launcher(pairParser.getHost(), pairParser.getPredefinedPin(), &app);
+             engine.rootContext()->setContextProperty("launcher", launcher);
++            if (qgetenv("LLREMOTE_HEADLESS_PAIR") == "1") {
++                hasGUI = false;
++                QObject::connect(launcher, &CliPair::Launcher::success, &app, [] { QCoreApplication::exit(0); }, Qt::QueuedConnection);
++                QObject::connect(launcher, &CliPair::Launcher::failed, &app, [] { QCoreApplication::exit(1); }, Qt::QueuedConnection);
++                llCliManager = new ComputerManager(StreamingPreferences::get());
++                launcher->execute(llCliManager);
++            }
+             break;
+         }
+     case GlobalCommandLineParser::ListRequested:
+@@ -1026,7 +1052,8 @@ int main(int argc, char *argv[])
+             ListCommandLineParser listParser;
+             listParser.parse(app.arguments());
+             auto launcher = new CliListApps::Launcher(listParser.getHost(), listParser, &app);
+-            launcher->execute(new ComputerManager(StreamingPreferences::get()));
++            llCliManager = new ComputerManager(StreamingPreferences::get());
++            launcher->execute(llCliManager);
+             hasGUI = false;
+             break;
+         }
+@@ -1034,12 +1061,13 @@ int main(int argc, char *argv[])
+ 
+     if (hasGUI) {
+         engine.rootContext()->setContextProperty("initialView", initialView);
+-        engine.rootContext()->setContextProperty("runConfigChecks", commandLineParserResult == GlobalCommandLineParser::NormalStartRequested);
++        engine.rootContext()->setContextProperty("runConfigChecks", commandLineParserResult == GlobalCommandLineParser::NormalStartRequested && !llSettings);
+ 
+         // Load the main.qml file
+         engine.load(QUrl(QStringLiteral("qrc:/gui/main.qml")));
+         if (engine.rootObjects().isEmpty())
+             return -1;
++        LLRemoteBridge::setSettingsVisible(llSettings);
+     }
+ 
+     int err = app.exec();
+@@ -1047,6 +1075,9 @@ int main(int argc, char *argv[])
+     // Give worker tasks time to properly exit. Fixes PendingQuitTask
+     // sometimes freezing and blocking process exit.
+     QThreadPool::globalInstance()->waitForDone(30000);
++    // Flush the pairing certificate before the CLI process exits.
++    delete llCliManager;
++    llCliManager = nullptr;
+ 
+     // Restore the default logger for all libraries before shutting down ours
+ #if SDL_VERSION_ATLEAST(3, 0, 0)
+diff --git a/app/path.cpp b/app/path.cpp
+index fd3ddd7..6ec1448 100644
+--- a/app/path.cpp
++++ b/app/path.cpp
+@@ -105,13 +105,14 @@ QString Path::getDataFilePath(QString fileName)
+ void Path::initialize(bool portable)
+ {
+     if (portable) {
+-        s_LogDir = QDir::currentPath();
+-        s_BoxArtCacheDir = QDir::currentPath() + "/boxart";
+-        s_QmlCacheDir = QDir::currentPath() + "/qmlcache";
++        const QString llBase = qgetenv("LLREMOTE_MOONLIGHT_DATA_DIR").isEmpty() ? QDir::currentPath() : QString::fromUtf8(qgetenv("LLREMOTE_MOONLIGHT_DATA_DIR"));
++        s_LogDir = llBase;
++        s_BoxArtCacheDir = llBase + "/boxart";
++        s_QmlCacheDir = llBase + "/qmlcache";
+ 
+         // In order for the If-Modified-Since logic to work in MappingFetcher,
+         // the cache directory must be different than the current directory.
+-        s_CacheDir = QDir::currentPath() + "/cache";
++        s_CacheDir = llBase + "/cache";
+     }
+     else {
+ #ifdef Q_OS_DARWIN
+diff --git a/app/streaming/audio/renderers/sdlaud.cpp b/app/streaming/audio/renderers/sdlaud.cpp
+index 9ce494a..55fe7b2 100644
+--- a/app/streaming/audio/renderers/sdlaud.cpp
++++ b/app/streaming/audio/renderers/sdlaud.cpp
+@@ -1,4 +1,5 @@
+ #include "sdl.h"
++#include <QByteArray>
+ 
+ #include <Limelight.h>
+ 
+@@ -37,7 +38,8 @@ bool SdlAudioRenderer::prepareForPlayback(const OPUS_MULTISTREAM_CONFIGURATION*
+                   opusConfig->channelCount *
+                   getAudioBufferSampleSize();
+ 
+-    m_AudioDevice = SDL_OpenAudioDevice(NULL, 0, &want, &have, 0);
++    const auto llDevice = qgetenv("LLREMOTE_AUDIO_DEVICE");
++    m_AudioDevice = SDL_OpenAudioDevice(llDevice.isEmpty() ? NULL : llDevice.constData(), 0, &want, &have, 0);
+     if (m_AudioDevice == 0) {
+         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
+                      "Failed to open audio device: %s",
+diff --git a/app/streaming/input/input.cpp b/app/streaming/input/input.cpp
+index 2597f99..af1941e 100644
+--- a/app/streaming/input/input.cpp
++++ b/app/streaming/input/input.cpp
+@@ -276,7 +276,10 @@ void SdlInputHandler::notifyFocusLost()
+     // This lets user to interact with our window's title bar and with the buttons in it.
+     // Doing this while the window is full-screen breaks the transition out of FS
+     // (desktop and exclusive), so we must check for that before releasing mouse capture.
+-    if (!(SDL_GetWindowFlags(m_Window) & SDL_WINDOW_FULLSCREEN) && !m_AbsoluteMouseMode) {
++    if (!(SDL_GetWindowFlags(m_Window) & SDL_WINDOW_FULLSCREEN) &&
++        (!m_AbsoluteMouseMode || !qgetenv("LLREMOTE_PIPE_NAME").isEmpty())) {
++        SDL_CaptureMouse(SDL_FALSE);
++        m_PendingMouseButtonsAllUpOnVideoRegionLeave = false;
+         setCaptureActive(false);
+     }
+ 
+@@ -354,9 +357,12 @@ void SdlInputHandler::setCaptureActive(bool active)
+ {
+     if (active) {
+         // If we're in relative mode, try to activate SDL's relative mouse mode
+-        if (m_AbsoluteMouseMode || SDL_SetRelativeMouseMode(SDL_TRUE) < 0) {
+-            // Relative mouse mode didn't work or was disabled, so we'll just hide the cursor
+-            SDL_ShowCursor(m_MouseCursorCapturedVisibilityState);
++        const bool desktopWindow = !qgetenv("LLREMOTE_PIPE_NAME").isEmpty() &&
++                                   !(SDL_GetWindowFlags(m_Window) & SDL_WINDOW_FULLSCREEN);
++        if (m_AbsoluteMouseMode || desktopWindow || SDL_SetRelativeMouseMode(SDL_TRUE) < 0) {
++            // In a desktop window, send relative deltas without trapping the local pointer.
++            SDL_ShowCursor(desktopWindow && !m_AbsoluteMouseMode
++                           ? SDL_ENABLE : m_MouseCursorCapturedVisibilityState);
+             m_FakeMouseCaptureActive = true;
+         }
+ 
+diff --git a/app/streaming/input/input.h b/app/streaming/input/input.h
+index 151c69c..6df731e 100644
+--- a/app/streaming/input/input.h
++++ b/app/streaming/input/input.h
+@@ -145,6 +145,13 @@ public:
+     bool isSystemKeyCaptureActive();
+ 
+     void setCaptureActive(bool active);
++    void llRemoteSetMouseMode(bool absolute) {
++        const bool captured = isCaptureActive();
++        setCaptureActive(false);
++        m_AbsoluteMouseMode = absolute;
++        if (captured) setCaptureActive(true);
++        updatePointerRegionLock();
++    }
+ 
+     bool isMouseInVideoRegion(int mouseX, int mouseY, int windowWidth = -1, int windowHeight = -1);
+ 
+diff --git a/app/streaming/input/mouse.cpp b/app/streaming/input/mouse.cpp
+index c5bd1fd..41fe0e8 100644
+--- a/app/streaming/input/mouse.cpp
++++ b/app/streaming/input/mouse.cpp
+@@ -300,7 +300,9 @@ void SdlInputHandler::updatePointerRegionLock()
+     }
+ 
+     // If region lock is enabled, grab the cursor so it can't accidentally leave our window.
+-    if (isCaptureActive() && m_PointerRegionLockActive) {
++    const bool desktopWindow = !qgetenv("LLREMOTE_PIPE_NAME").isEmpty() &&
++                               !(SDL_GetWindowFlags(m_Window) & SDL_WINDOW_FULLSCREEN);
++    if (isCaptureActive() && m_PointerRegionLockActive && !desktopWindow) {
+ #if SDL_VERSION_ATLEAST(2, 0, 18)
+         SDL_Rect src, dst;
+ 
+diff --git a/app/streaming/session.cpp b/app/streaming/session.cpp
+index 40c1e59..6d0d68a 100644
+--- a/app/streaming/session.cpp
++++ b/app/streaming/session.cpp
+@@ -1,4 +1,7 @@
+ #include "session.h"
++#include "../llremote/llremotebridge.h"
++#include <QJsonObject>
++#include <memory>
+ #include "settings/streamingpreferences.h"
+ #include "streaming/streamutils.h"
+ #include "backend/richpresencemanager.h"
+@@ -1504,7 +1507,17 @@ void Session::updateOptimalWindowDisplayMode()
+ 
+ void Session::toggleFullscreen()
+ {
+-    bool fullScreen = !(SDL_GetWindowFlags(m_Window) & m_FullScreenFlag);
++    const bool fullScreen = (SDL_GetWindowFlags(m_Window) & SDL_WINDOW_FULLSCREEN) != 0;
++    setFullscreenMode(fullScreen ? 0 : m_FullScreenFlag);
++}
++
++bool Session::setFullscreenMode(Uint32 mode)
++{
++    const auto current = SDL_GetWindowFlags(m_Window) & SDL_WINDOW_FULLSCREEN_DESKTOP;
++    if (current == mode) return true;
++
++    int oldWidth, oldHeight;
++    SDL_GetWindowSize(m_Window, &oldWidth, &oldHeight);
+ 
+ #if defined(Q_OS_WIN32) || defined(Q_OS_DARWIN)
+     // Destroy the video decoder before toggling full-screen because D3D9 can try
+@@ -1522,13 +1535,16 @@ void Session::toggleFullscreen()
+ #endif
+ 
+     // Actually enter/leave fullscreen
+-    SDL_SetWindowFullscreen(m_Window, fullScreen ? m_FullScreenFlag : 0);
++    const bool applied = SDL_SetWindowFullscreen(m_Window, mode) == 0;
++    if (!applied) {
++        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Failed to change window mode: %s", SDL_GetError());
++    }
+ 
+ #ifdef Q_OS_DARWIN
+     // SDL on macOS has a bug that causes the window size to be reset to crazy
+     // large dimensions when exiting out of true fullscreen mode. We can work
+     // around the issue by manually resetting the position and size here.
+-    if (!fullScreen && m_FullScreenFlag == SDL_WINDOW_FULLSCREEN) {
++    if (applied && mode == 0 && current == SDL_WINDOW_FULLSCREEN) {
+         int x, y, width, height;
+         getWindowDimensions(x, y, width, height);
+         SDL_SetWindowSize(m_Window, width, height);
+@@ -1536,11 +1552,32 @@ void Session::toggleFullscreen()
+     }
+ #endif
+ 
++    if (applied && mode == 0 && !qgetenv("LLREMOTE_PIPE_NAME").isEmpty()) {
++        m_InputHandler->raiseAllKeys();
++        m_InputHandler->setCaptureActive(false);
++        SDL_SetWindowBordered(m_Window, SDL_TRUE);
++        SDL_SetWindowResizable(m_Window, SDL_TRUE);
++    }
++
+     // Input handler might need to start/stop keyboard grab after changing modes
+     m_InputHandler->updateKeyboardGrabState();
+ 
+     // Input handler might need stop/stop mouse grab after changing modes
+     m_InputHandler->updatePointerRegionLock();
++
++    // Even a same-size mode change needs a replacement decoder after the reset above.
++    int width, height;
++    SDL_GetWindowSize(m_Window, &width, &height);
++    if (width == oldWidth && height == oldHeight) {
++        SDL_Event resize{};
++        resize.type = SDL_WINDOWEVENT;
++        resize.window.windowID = SDL_GetWindowID(m_Window);
++        resize.window.event = SDL_WINDOWEVENT_SIZE_CHANGED;
++        resize.window.data1 = width;
++        resize.window.data2 = height;
++        SDL_PushEvent(&resize);
++    }
++    return applied;
+ }
+ 
+ void Session::notifyMouseEmulationMode(bool enabled)
+@@ -1712,6 +1749,7 @@ bool Session::startConnectionAsync()
+         return false;
+     }
+ 
++    LLRemoteBridge::setConnected(true);
+     emit connectionStarted();
+     return true;
+ }
+@@ -1814,6 +1852,9 @@ void Session::exec()
+     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 0);
+ 
+     // We always want a resizable window with High DPI enabled
++    if (!qgetenv("LLREMOTE_PIPE_NAME").isEmpty()) {
++        SDL_SetHint(SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "0");
++    }
+     Uint32 defaultWindowFlags = SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_RESIZABLE;
+ 
+     // If we're starting in windowed mode and the Moonlight GUI is maximized or
+@@ -2003,6 +2044,12 @@ void Session::exec()
+ 
+         case SDL_USEREVENT:
+             switch (event.user.code) {
++            case LLRemoteBridge::EventCode:
++                LLRemoteBridge::processRequest([this](const QJsonObject& request) {
++                    return llRemoteRequest(request);
++                });
++                if (m_ShouldExit) goto DispatchDeferredCleanup;
++                break;
+             case SDL_CODE_FRAME_READY:
+                 if (m_VideoDecoder != nullptr) {
+                     m_VideoDecoder->renderFrameOnMainThread();
+@@ -2313,6 +2360,7 @@ DispatchDeferredCleanup:
+ 
+     // Uncapture the mouse and hide the window immediately,
+     // so we can return to the Qt GUI ASAP.
++    LLRemoteBridge::setConnected(false);
+     m_InputHandler->setCaptureActive(false);
+     SDL_EnableScreenSaver();
+     SDL_SetHint(SDL_HINT_TIMER_RESOLUTION, "0");
+@@ -2377,3 +2425,69 @@ DispatchDeferredCleanup:
+     // reference.
+     QThreadPool::globalInstance()->start(new DeferredSessionCleanupTask(this));
+ }
++
++bool Session::llRemoteRequest(const QJsonObject& request)
++{
++    const auto action = request["action"].toString();
++    const auto payload = request["payload"].toObject();
++    if (action == "disconnect") {
++        setShouldExit(false);
++        Q_ASSERT(m_ShouldExit);
++        return true;
++    }
++    if (action == "input") {
++        m_InputHandler->raiseAllKeys();
++        // Leave the local pointer free. Clicking the stream recaptures it.
++        m_InputHandler->setCaptureActive(false);
++        return true;
++    }
++    if (action != "apply") return false;
++    const auto patch = payload["patch"].toObject();
++    const auto preferences = payload["preferences"].toObject();
++    const auto kind = patch["kind"].toString();
++    if (kind == "mouse") {
++        const bool absolute = preferences["mouseMode"].toString() == "office";
++        m_Preferences->absoluteMouseMode = absolute;
++        m_InputHandler->raiseAllKeys();
++        m_InputHandler->setCaptureActive(false);
++        m_InputHandler->llRemoteSetMouseMode(absolute);
++        return true;
++    }
++    else if (kind == "window" && m_Window) {
++        const auto mode = preferences["windowMode"].toString();
++        const Uint32 target = mode == "windowed" ? 0 :
++            mode == "fullscreen" ? SDL_WINDOW_FULLSCREEN : SDL_WINDOW_FULLSCREEN_DESKTOP;
++        const auto current = SDL_GetWindowFlags(m_Window) & SDL_WINDOW_FULLSCREEN_DESKTOP;
++        if (current != target) {
++            // Release the exclusive display mode before entering desktop fullscreen.
++            if (current != 0 && !setFullscreenMode(0)) return false;
++            if (target != 0 && !setFullscreenMode(target)) return false;
++        }
++        if ((SDL_GetWindowFlags(m_Window) & SDL_WINDOW_FULLSCREEN_DESKTOP) != target) return false;
++        if (target == 0) {
++            SDL_Rect usable{};
++            if (SDL_GetDisplayUsableBounds(SDL_GetWindowDisplayIndex(m_Window), &usable) == 0) {
++                int width, height;
++                SDL_GetWindowSize(m_Window, &width, &height);
++                // Some Windows drivers restore a maximized or monitor-sized window.
++                if ((SDL_GetWindowFlags(m_Window) & SDL_WINDOW_MAXIMIZED) ||
++                    width >= usable.w || height >= usable.h) {
++                    SDL_RestoreWindow(m_Window);
++                    SDL_Rect source{0, 0, m_StreamConfig.width, m_StreamConfig.height};
++                    SDL_Rect size{0, 0, usable.w * 4 / 5, usable.h * 4 / 5};
++                    StreamUtils::scaleSourceToDestinationSurface(&source, &size);
++                    SDL_SetWindowSize(m_Window, size.w, size.h);
++                    SDL_SetWindowPosition(m_Window, usable.x + (usable.w - size.w) / 2,
++                                          usable.y + (usable.h - size.h) / 2);
++                }
++            }
++        } else {
++            m_FullScreenFlag = target;
++        }
++        return true;
++    }
++    else if (kind == "audio") {
++        return LLRemoteBridge::applyAudio(preferences["volume"].toInt(75), preferences["muted"].toBool());
++    }
++    return false;
++}
+diff --git a/app/streaming/session.h b/app/streaming/session.h
+index 53ac9e0..7367ab3 100644
+--- a/app/streaming/session.h
++++ b/app/streaming/session.h
+@@ -89,6 +89,8 @@ public:
+     }
+ };
+ 
++class QJsonObject;
++
+ class Session : public QObject
+ {
+     Q_OBJECT
+@@ -144,6 +146,8 @@ signals:
+     void launchWarningsChanged();
+ 
+ private:
++    bool llRemoteRequest(const QJsonObject& request);
++    bool setFullscreenMode(Uint32 mode);
+     void exec();
+ 
+     bool startConnectionAsync();
+diff --git a/app/streaming/video/ffmpeg.cpp b/app/streaming/video/ffmpeg.cpp
+index c20d312..e5b6cd8 100644
+--- a/app/streaming/video/ffmpeg.cpp
++++ b/app/streaming/video/ffmpeg.cpp
+@@ -1,5 +1,6 @@
+ #include <Limelight.h>
+ #include "ffmpeg.h"
++#include "../../llremote/llremotebridge.h"
+ #include "utils.h"
+ #include "streaming/session.h"
+ 
+@@ -2121,11 +2122,12 @@ int FFmpegVideoDecoder::submitDecodeUnit(PDECODE_UNIT du)
+     // Flip stats windows roughly every second
+     if (LiGetMicroseconds() > m_ActiveWndVideoStats.measurementStartUs + 1000000) {
+         // Update overlay stats if it's enabled
+-        if (Session::get()->getOverlayManager().isOverlayEnabled(Overlay::OverlayDebug)) {
++        if (Session::get()->getOverlayManager().isOverlayEnabled(Overlay::OverlayDebug) || !qgetenv("LLREMOTE_PIPE_NAME").isEmpty()) {
+             VIDEO_STATS lastTwoWndStats = {};
+             addVideoStats(m_LastWndVideoStats, lastTwoWndStats);
+             addVideoStats(m_ActiveWndVideoStats, lastTwoWndStats);
+ 
++            LLRemoteBridge::publishMetrics(lastTwoWndStats);
+             stringifyVideoStats(lastTwoWndStats,
+                                 Session::get()->getOverlayManager().getOverlayText(Overlay::OverlayDebug),
+                                 Session::get()->getOverlayManager().getOverlayMaxTextLength());

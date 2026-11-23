@@ -1,0 +1,109 @@
+{
+  "version": "0.1.6",
+  "date": "2026-11-22",
+  "timezone": "Asia/Shanghai",
+  "status": "built_and_verified",
+  "distributionData": "empty_at_build",
+  "localData": "created_by_user_in_0.1.6",
+  "changes": [
+    "Separate VPN configuration, Wintun initialization and service readiness deadlines",
+    "Reserve full service readiness wait within a 90-second startup budget",
+    "Preserve original numeric Wintun diagnostics and native last-error state",
+    "Prevent the pinned SDK lazy loader from replacing the native logger",
+    "Validate diagnostic process identity, operation time and initialization stage",
+    "Keep application and engine ownership when shutdown is not confirmed",
+    "Identify and repair the local stale offline Wintun LUID conflict"
+  ],
+  "rootCause": {
+    "scope": "verified_local_machine",
+    "oldOfflineDeviceStoredLuidIndex": 32768,
+    "oldOfflineDeviceLiveLuidIndex": 32770,
+    "newDeviceAllocatedLuidIndex": 32770,
+    "ndisStatus": "0xC00002F0",
+    "ndisAddDeviceFailureReason": 4,
+    "win32Code": 2,
+    "deviceProblemCode": 31,
+    "repair": "Back up the record and remove the one verified offline Wintun PnP device through Windows device management",
+    "immediateCacheRemovalClaimed": false,
+    "registryAclChanged": false,
+    "networkResetPerformed": false,
+    "driverUninstalled": false,
+    "document": "docs/虚拟网卡创建故障排查.md"
+  },
+  "checks": {
+    "typescriptAndProductionBuild": "passed",
+    "frontendUnit": { "passed": 14, "failed": 0 },
+    "frontendUI": { "passed": 10, "failed": 0, "viewports": ["1140x844", "960x700 at 150%"] },
+    "rustUnit": { "passed": 34, "failed": 0, "ignoredNativeScenarios": 4, "docTests": "passed" },
+    "nativeEngineHost": {
+      "status": "passed",
+      "x86Compilation": "passed",
+      "isolatedSdkStartup": "passed",
+      "pinnedSdkIdentityAndLayoutCheck": "passed",
+      "nativeLoggerMemoryVerification": "passed",
+      "loggerRetentionAndReset": "passed",
+      "lastErrorPreserved": "passed",
+      "atomicNumericDiagnosticWrite": "passed",
+      "unicodeDataDirectory": "passed"
+    },
+    "nativeWintunCreation": {
+      "status": "passed",
+      "randomGuid": { "adapterCreated": true, "sessionStarted": true, "milliseconds": 265, "win32Error": 0 },
+      "repeatedSdkGuid": [
+        { "adapterCreated": true, "sessionStarted": true, "milliseconds": 172, "win32Error": 0 },
+        { "adapterCreated": true, "sessionStarted": true, "milliseconds": 188, "win32Error": 0 }
+      ]
+    },
+    "actualAcceptControl": {
+      "status": "passed",
+      "actualReleaseUserInterface": true,
+      "mainProcessElevated": true,
+      "actualSdk": true,
+      "authenticated": true,
+      "serverRunning": true,
+      "sdkFrameType": "2",
+      "sunshineHttpsStatus": 200,
+      "sunshineWebPort": 47990,
+      "acceptControlPreference": true,
+      "pnpDevicePresent": true,
+      "pnpDeviceStatus": "OK",
+      "adapterStatus": "Up",
+      "storedLuidIndex": 32768,
+      "liveLuidIndex": 32768,
+      "guidLookupError": 0,
+      "serviceLeftRunning": true,
+      "credentialsPrinted": false
+    },
+    "executable": {
+      "version": "0.1.6",
+      "mainArchitecture": "x64",
+      "engineHostArchitecture": "x86",
+      "requestedExecutionLevel": "requireAdministrator",
+      "executableSha256": "d70de9b13d597307c3e492641820fc3172b426d1fd99603d8f030f8765d2fd25",
+      "engineHostSha256": "253f74cb0be2ccae2c0f41c7ea4cfcbf9cd2b14b27b2163bcbf7a894cdfe87ec"
+    },
+    "packagedResources": {
+      "checkedNativeBinaries": 138,
+      "bundledWebView2Binaries": 0,
+      "webview2Delivery": "system-evergreen",
+      "nestedQtPluginsChecked": true,
+      "pinnedComponentHashesMatch": true,
+      "resourceFilesCompared": 1597,
+      "missingDependencies": 0,
+      "systemBaseline": "Current local Windows; clean Windows acceptance deferred"
+    },
+    "temporaryDiagnosticCleanup": {
+      "scheduledTaskRemoved": true,
+      "etwSessionStopped": true,
+      "etwCollectorRemoved": true,
+      "temporaryServiceChangesRestored": true,
+      "temporaryRegistryAndEventLogChangesRestored": true
+    }
+  },
+  "unverified": [
+    "Cross-device networking and streaming with another computer",
+    "Pairing, streaming and disconnection in the current two-machine setup",
+    "Sustained recovery after restarting the application and Windows",
+    "Clean Windows installation"
+  ]
+}
