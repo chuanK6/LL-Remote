@@ -8,6 +8,8 @@
 
 源码仓库：[chuanK6/LL-Remote](https://github.com/chuanK6/LL-Remote)，主分支 `main`。
 
+应用下载：[0.1.12 发布页](https://github.com/chuanK6/LL-Remote/releases/tag/v0.1.12) · [Windows x64 便携版 ZIP](https://github.com/chuanK6/LL-Remote/releases/download/v0.1.12/LLRemote-Portable-x64-0.1.12.zip) · [SHA-256 校验文件](https://github.com/chuanK6/LL-Remote/releases/download/v0.1.12/LLRemote-Portable-x64-0.1.12.zip.sha256.txt)。公开下载包不包含发布者的本机 Data 和配置。
+
 当前为 0.1.12，使用系统共享 WebView2。接受控制并行启动皎月连和 Sunshine，并在后台准备限定到组网接口的防火墙规则。远程设备按已确认的身份复用记录。主程序请求 Windows 管理员权限，网络宿主在加载内核前按绝对路径预加载 Wintun DLL。[更新日志](CHANGELOG.md)
 
 网卡初始化和服务就绪分阶段等待，原生诊断保留 Windows 错误码、设备问题码及 NTSTATUS。已在本机确认并修复一条旧离线 Wintun 接口的持久编号与运行时编号冲突，连续三次真实网卡创建和收发会话启动成功。根因与验证范围见 [虚拟网卡创建故障排查](docs/虚拟网卡创建故障排查.md)。

@@ -2,5 +2,22 @@
   "version": "0.1.12",
   "platform": "Windows x64",
   "scope": "Production build and portable package",
-  "runtimeAcceptance": "User verification"
+  "runtimeAcceptance": "User verification",
+  "githubRelease": {
+    "date": "2026-11-23",
+    "url": "https://github.com/chuanK6/LL-Remote/releases/tag/v0.1.12",
+    "tag": "v0.1.12",
+    "sourceCommit": "0751eba6b2d101c484381a03e835d73d9ac6a844",
+    "asset": "LLRemote-Portable-x64-0.1.12.zip",
+    "bytes": 182140651,
+    "sha256": "eeb1df198cf0f8debd3a0996f59da05105864648be1fb9761605c0d2c81fa663",
+    "githubAssetDigestMatches": true,
+    "emptyData": true,
+    "removedPersonalFiles": 348,
+    "programFilesMatchedToExistingStage": 1621,
+    "utf8DocumentNamesRestored": 3,
+    "zipCrcPassed": true,
+    "originalLocalZipPreserved": true,
+    "applicationRecompiled": false
+  }
 }

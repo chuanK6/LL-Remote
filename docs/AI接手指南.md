@@ -138,6 +138,8 @@ python scripts/verify-bundle.py release/LLRemote-Portable-x64-0.1.12 --reference
 
 打包脚本生成完整便携目录，不会自动刷新同名 ZIP。需要压缩交付时，另行生成 ZIP，解压到隔离目录并验证；交付包 Data 必须为空，运行资源不能含用户配置、日志或私钥。同名输出已有用户 Data 时脚本会拒绝覆盖，应保留原目录并使用明确的新输出，不能删除用户数据绕过检查。
 
+公开 ZIP 放在 GitHub Releases。已运行过的包可能重新包含 Data、根目录 config 和浏览器缓存，即使 component-manifest 仍写着 cleanData:true 也需要检查实际归档。本机原 0.1.12 ZIP 已保留，公开下载使用去除个人数据、修正中文文件名并完成校验的副本。
+
 新版本同步 `package.json`、`src-tauri/Cargo.toml`、`src-tauri/tauri.conf.json` 及相应锁文件中的项目版本、README、CHANGELOG 和该版本验收记录。检查生成 EXE、目录、ZIP、版本与校验记录属于同一次最终构建。
 
 确实需要重新准备内核或重建扩展时，按以下顺序：
