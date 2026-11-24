@@ -1,8 +1,227 @@
 use crate::{
     error::{AppError, ErrorCode},
-    model::{Device, HistoryEntry, SessionPatch, StreamPreferences},
+    model::{Device, DeviceEdit, HistoryEntry, SessionPatch, StreamPreferences},
     storage::{SecretRecord, Store, Vault},
 };
+
+fn wallpaper_fixture() -> (tempfile::TempDir, Store, std::path::PathBuf) {
+    let root = tempfile::tempdir().unwrap();
+    let source = root.path().join("source.png");
+    std::fs::write(&source, b"\x89PNG\r\n\x1a\nimage fixture").unwrap();
+    let mut store = Store::open(root.path().join("Data")).unwrap();
+    store.switch_account(Some("wallpaper-account")).unwrap();
+    store.account_data.devices.push(Device {
+        id: "device".into(),
+        ..Device::default()
+    });
+    store
+        .edit_device(&wallpaper_edit(Some(&source), false))
+        .unwrap();
+    (root, store, source)
+}
+
+fn wallpaper_edit(path: Option<&std::path::Path>, reset: bool) -> DeviceEdit {
+    DeviceEdit {
+        device_id: "device".into(),
+        display_name: "电脑".into(),
+        favorite: false,
+        note: String::new(),
+        wallpaper_path: path.map(|path| path.to_string_lossy().into()),
+        reset_wallpaper: reset,
+    }
+}
+
+#[test]
+fn wallpaper_reset_deletes_managed_copy_and_keeps_source_and_default() {
+    let (_root, mut store, source) = wallpaper_fixture();
+    let previous = store
+        .root
+        .join(store.device("device").unwrap().wallpaper.unwrap());
+    let default = store.root.join("wallpapers/default.svg");
+    std::fs::write(&default, b"<svg>default</svg>").unwrap();
+    store.edit_device(&wallpaper_edit(None, true)).unwrap();
+    assert!(!previous.exists());
+    assert!(source.exists());
+    assert_eq!(std::fs::read(&default).unwrap(), b"<svg>default</svg>");
+    assert!(store.device("device").unwrap().wallpaper.is_none());
+    let mut reopened = Store::open(store.root.clone()).unwrap();
+    reopened.switch_account(Some("wallpaper-account")).unwrap();
+    assert!(reopened.device("device").unwrap().wallpaper.is_none());
+}
+
+#[test]
+fn wallpaper_replacement_deletes_previous_and_persists_new_copy() {
+    let (root, mut store, source) = wallpaper_fixture();
+    let previous = store
+        .root
+        .join(store.device("device").unwrap().wallpaper.unwrap());
+    let replacement = root.path().join("replacement.webp");
+    let bytes = b"RIFF1234WEBPnew fixture";
+    std::fs::write(&replacement, bytes).unwrap();
+    store
+        .edit_device(&wallpaper_edit(Some(&replacement), false))
+        .unwrap();
+    let relative = store.device("device").unwrap().wallpaper.unwrap();
+    assert!(!previous.exists());
+    assert_eq!(std::fs::read(store.root.join(&relative)).unwrap(), bytes);
+    assert!(source.exists() && replacement.exists());
+    assert_eq!(
+        std::fs::read_dir(store.root.join("wallpapers"))
+            .unwrap()
+            .count(),
+        1
+    );
+    let mut reopened = Store::open(store.root.clone()).unwrap();
+    reopened.switch_account(Some("wallpaper-account")).unwrap();
+    assert_eq!(
+        reopened.device("device").unwrap().wallpaper.as_deref(),
+        Some(relative.as_str())
+    );
+}
+
+#[test]
+fn wallpaper_reselecting_managed_copy_reads_before_deleting_previous() {
+    let (_root, mut store, _source) = wallpaper_fixture();
+    let previous = store
+        .root
+        .join(store.device("device").unwrap().wallpaper.unwrap());
+    let bytes = std::fs::read(&previous).unwrap();
+    store
+        .edit_device(&wallpaper_edit(Some(&previous), false))
+        .unwrap();
+    let current = store
+        .root
+        .join(store.device("device").unwrap().wallpaper.unwrap());
+    assert_ne!(current, previous);
+    assert!(!previous.exists());
+    assert_eq!(std::fs::read(current).unwrap(), bytes);
+}
+
+#[test]
+fn wallpaper_metadata_edit_and_rejected_upload_keep_previous() {
+    let (root, mut store, _source) = wallpaper_fixture();
+    let relative = store.device("device").unwrap().wallpaper.unwrap();
+    let previous = store.root.join(&relative);
+    store.edit_device(&wallpaper_edit(None, false)).unwrap();
+    let oversized = root.path().join("oversized.png");
+    std::fs::File::create(&oversized)
+        .unwrap()
+        .set_len(5 * 1024 * 1024 + 1)
+        .unwrap();
+    assert!(store
+        .edit_device(&wallpaper_edit(Some(&oversized), false))
+        .is_err());
+    assert_eq!(
+        store.device("device").unwrap().wallpaper.as_deref(),
+        Some(relative.as_str())
+    );
+    assert!(previous.exists());
+    assert_eq!(
+        std::fs::read_dir(store.root.join("wallpapers"))
+            .unwrap()
+            .count(),
+        1
+    );
+}
+
+#[test]
+fn wallpaper_save_failure_keeps_previous_and_removes_uncommitted_import() {
+    let (_root, mut store, source) = wallpaper_fixture();
+    let relative = store.device("device").unwrap().wallpaper.unwrap();
+    let backup = store
+        .root
+        .join("accounts")
+        .join(&store.account_scope)
+        .join("devices.bak");
+    std::fs::create_dir(&backup).unwrap();
+    assert!(store
+        .edit_device(&wallpaper_edit(Some(&source), false))
+        .is_err());
+    assert_eq!(
+        store.device("device").unwrap().wallpaper.as_deref(),
+        Some(relative.as_str())
+    );
+    assert!(store.root.join(relative).exists());
+    assert_eq!(
+        std::fs::read_dir(store.root.join("wallpapers"))
+            .unwrap()
+            .count(),
+        1
+    );
+}
+
+#[cfg(windows)]
+#[test]
+fn wallpaper_delete_failure_rolls_back_and_does_not_leave_new_import() {
+    let (_root, mut store, source) = wallpaper_fixture();
+    let relative = store.device("device").unwrap().wallpaper.unwrap();
+    let previous = store.root.join(&relative);
+    use std::os::windows::fs::OpenOptionsExt;
+    // Deny FILE_SHARE_DELETE to model another application holding the image.
+    // Modern Rust/Windows can delete readonly files, so readonly is not a lock.
+    let held = std::fs::OpenOptions::new()
+        .read(true)
+        .share_mode(3)
+        .open(&previous)
+        .unwrap();
+    let result = store.edit_device(&wallpaper_edit(Some(&source), false));
+    drop(held);
+    assert!(result.unwrap_err().message.contains("旧壁纸无法删除"));
+    assert_eq!(
+        store.device("device").unwrap().wallpaper.as_deref(),
+        Some(relative.as_str())
+    );
+    assert!(previous.exists());
+    assert_eq!(
+        std::fs::read_dir(store.root.join("wallpapers"))
+            .unwrap()
+            .count(),
+        1
+    );
+    let mut reopened = Store::open(store.root.clone()).unwrap();
+    reopened.switch_account(Some("wallpaper-account")).unwrap();
+    assert_eq!(
+        reopened.device("device").unwrap().wallpaper.as_deref(),
+        Some(relative.as_str())
+    );
+}
+
+#[test]
+fn wallpaper_reset_never_deletes_svg_or_outside_assets() {
+    let (root, mut store, _source) = wallpaper_fixture();
+    for relative in ["wallpapers/default.svg", "assets/default.png"] {
+        let path = store.root.join(relative);
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(&path, b"bundled default fixture").unwrap();
+        store.account_data.devices[0].wallpaper = Some(relative.into());
+        store.edit_device(&wallpaper_edit(None, true)).unwrap();
+        assert_eq!(std::fs::read(&path).unwrap(), b"bundled default fixture");
+    }
+    let outside = root.path().join("outside.png");
+    std::fs::write(&outside, b"outside fixture").unwrap();
+    store.account_data.devices[0].wallpaper = Some(outside.to_string_lossy().into());
+    store.edit_device(&wallpaper_edit(None, true)).unwrap();
+    assert!(outside.exists());
+}
+
+#[test]
+fn wallpaper_shared_across_accounts_deleted_only_after_final_reference() {
+    let (_root, mut store, _source) = wallpaper_fixture();
+    let relative = store.device("device").unwrap().wallpaper.unwrap();
+    let previous = store.root.join(&relative);
+    let mut other = Store::open(store.root.clone()).unwrap();
+    other.switch_account(Some("other-account")).unwrap();
+    other.account_data.devices.push(Device {
+        id: "device".into(),
+        wallpaper: Some(relative.clone()),
+        ..Device::default()
+    });
+    other.save_devices().unwrap();
+    store.edit_device(&wallpaper_edit(None, true)).unwrap();
+    assert!(previous.exists());
+    other.edit_device(&wallpaper_edit(None, true)).unwrap();
+    assert!(!previous.exists());
+}
 
 #[test]
 fn native_errors_stop_retries_for_password_and_keep_unknown_network_distinct() {

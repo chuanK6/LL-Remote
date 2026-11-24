@@ -4,6 +4,14 @@ import { bridge } from '../bridge'
 import wallpaper from '../assets/wallpaper.svg'
 const props = defineProps<{ path?: string | null }>()
 const source = ref(wallpaper)
-watch(() => props.path, async path => { source.value = path ? await bridge.wallpaper(path).catch(() => wallpaper) : wallpaper }, { immediate: true })
+watch(() => props.path, async (path, _, onCleanup) => {
+  let active = true
+  onCleanup(() => { active = false })
+  source.value = wallpaper
+  if (path) {
+    const resolved = await bridge.wallpaper(path).catch(() => wallpaper)
+    if (active) source.value = resolved
+  }
+}, { immediate: true })
 </script>
-<template><img :src="source" class="cover-art" alt="" draggable="false" /></template>
+<template><img :src="source" class="cover-art" alt="" draggable="false" @error="source = wallpaper" /></template>

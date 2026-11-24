@@ -1,0 +1,100 @@
+{
+  "version": "0.1.13",
+  "date": "2026-11-24",
+  "timezone": "Asia/Shanghai",
+  "platform": "Windows x64",
+  "scope": "Production build, isolated wallpaper lifecycle regression, clean portable package and GitHub release",
+  "changes": [
+    "Authorize each validated canonical wallpaper file for the asset protocol",
+    "Limit wallpaper preview and import to 5242880 bytes; reject oversized drafts without replacing the current selection",
+    "Default close to tray on; retain explicit persisted preferences",
+    "Shared bitrate numeric controls step by 1 Mbps",
+    "Delete superseded custom wallpaper copies after saved reset/replacement; preserve default assets and external source files; retain shared copies until final reference is removed"
+  ],
+  "preFixDiagnosis": {
+    "version": "0.1.12",
+    "isolatedData": true,
+    "testCopyPatches": [
+      "single-instance identifier",
+      "asInvoker manifest"
+    ],
+    "originalDistributionUnmodified": true,
+    "pngPreviewSucceeded": true,
+    "savedWallpaperAssetLoad": "HTTP 403",
+    "notFinalVersionAcceptance": true
+  },
+  "frontendBuild": {
+    "passed": true,
+    "command": "npm run build (vue-tsc and Vite)"
+  },
+  "nativeReleaseBuild": {
+    "passed": true,
+    "command": "node scripts/tauri.mjs build --no-bundle --config src-tauri/tauri.release.conf.json"
+  },
+  "portableResources": {
+    "checkedNativeBinaries": 138,
+    "bundledWebView2Binaries": 0,
+    "webview2Delivery": "system-evergreen",
+    "nestedQtPluginsChecked": true,
+    "pinnedComponentHashesMatch": true,
+    "resourceFilesCompared": 1597,
+    "nsisBundleMarkerAccepted": false,
+    "missingDependencies": 0,
+    "systemBaseline": "Current local Windows; clean Windows acceptance deferred"
+  },
+  "runtimeAcceptance": "User reported original 0.1.13 functionality tests passed on 2026-11-24; subsequent cleanup covered by isolated file regression, no real kernel/session launch",
+  "knownHistoricalTests": "0.1.12 cleanup baseline: 31 passed, 3 failed, 7 unhandled errors; not rerun or fixed in this task",
+  "pendingUserChecks": [
+    "Actual application interaction with the additional wallpaper cleanup; real dual-computer and clean Windows matrices not rerun"
+  ],
+  "githubPublished": false,
+  "delivery": {
+    "directory": ".work/github-release-0.1.13/LLRemote-Portable-x64-0.1.13",
+    "archive": "LLRemote-Portable-x64-0.1.13.zip",
+    "sha256File": "LLRemote-Portable-x64-0.1.13.zip.sha256.txt",
+    "emptyData": true,
+    "executableSha256": "8fcbb42b77377ba0f7f25c5ad5fb806cc1acb5d9a0651a2b1920f7e785e726be"
+  },
+  "oldVersionPreserved": {
+    "version": "0.1.12",
+    "filesCompared": 1970,
+    "allHashesUnchanged": true,
+    "includesOriginalZipAndData": true
+  },
+  "revision": "wallpaper-cleanup; software version remains 0.1.13 at user request",
+  "userAcceptance": {
+    "date": "2026-11-24",
+    "source": "User conversation: functionality tests passed",
+    "version": "0.1.13 before additional wallpaper cleanup",
+    "machineDetailsProvided": false
+  },
+  "wallpaperLifecycleRegression": {
+    "status": "passed",
+    "command": "node scripts/cargo.mjs test --manifest-path src-tauri/Cargo.toml --lib wallpaper_",
+    "isolatedTemporaryData": true,
+    "realKernelsStarted": false,
+    "passed": 8,
+    "failed": 0,
+    "filteredOut": 58,
+    "coverage": [
+      "Reset deletes managed copy and retains source/default",
+      "Replacement removes old copy and persists new one",
+      "Reselecting managed copy safely copies before deleting old",
+      "Metadata changes/rejected oversized input preserve image",
+      "Save failure removes uncommitted import",
+      "Deletion denied by another process rolls back without orphaning new import",
+      "SVG/outside assets are retained",
+      "Shared-account image deleted after final reference"
+    ]
+  },
+  "localPackageUpdate": {
+    "requestedByUser": true,
+    "directory": "release/LLRemote-Portable-x64-0.1.13",
+    "programUpdated": true,
+    "protectedUserFiles": 1,
+    "userFilesAllHashesUnchanged": true,
+    "originalProgramsAndZipBackedUpLocally": true,
+    "resourceVerificationPassed": true,
+    "zip": "Updated from the final clean release archive"
+  }
+}

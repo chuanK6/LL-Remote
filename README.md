@@ -8,9 +8,11 @@
 
 源码仓库：[chuanK6/LL-Remote](https://github.com/chuanK6/LL-Remote)，主分支 `main`。
 
-应用下载：[0.1.12 发布页](https://github.com/chuanK6/LL-Remote/releases/tag/v0.1.12) · [Windows x64 便携版 ZIP](https://github.com/chuanK6/LL-Remote/releases/download/v0.1.12/LLRemote-Portable-x64-0.1.12.zip) · [SHA-256 校验文件](https://github.com/chuanK6/LL-Remote/releases/download/v0.1.12/LLRemote-Portable-x64-0.1.12.zip.sha256.txt)。公开下载包不包含发布者的本机 Data 和配置。
+应用下载：[0.1.13 发布页](https://github.com/chuanK6/LL-Remote/releases/tag/v0.1.13) · [Windows x64 便携版 ZIP](https://github.com/chuanK6/LL-Remote/releases/download/v0.1.13/LLRemote-Portable-x64-0.1.13.zip) · [SHA-256 校验文件](https://github.com/chuanK6/LL-Remote/releases/download/v0.1.13/LLRemote-Portable-x64-0.1.13.zip.sha256.txt)。公开下载包不包含发布者的本机 Data 和配置。旧版 [0.1.12 发布页](https://github.com/chuanK6/LL-Remote/releases/tag/v0.1.12) 保留。
 
-当前为 0.1.12，使用系统共享 WebView2。接受控制并行启动皎月连和 Sunshine，并在后台准备限定到组网接口的防火墙规则。远程设备按已确认的身份复用记录。主程序请求 Windows 管理员权限，网络宿主在加载内核前按绝对路径预加载 Wintun DLL。[更新日志](CHANGELOG.md)
+当前版本为 0.1.13：修复壁纸资源加载权限，上传图片限制为 5 MB，恢复默认或更换后删除旧自定义图片，默认开启关闭窗口进入托盘，码率数值框每步调整 1 Mbps。用户确认原 0.1.13 功能测试通过；追加的壁纸文件清理单独验证。本机 0.1.13 程序和 ZIP 同步更新，Data 与配置保留，0.1.12 原样保留。最终干净发布包在独立目录生成。[更新日志](CHANGELOG.md)
+
+使用系统共享 WebView2。接受控制并行启动皎月连和 Sunshine，并在后台准备限定到组网接口的防火墙规则。远程设备按已确认的身份复用记录。主程序请求 Windows 管理员权限，网络宿主在加载内核前按绝对路径预加载 Wintun DLL。
 
 网卡初始化和服务就绪分阶段等待，原生诊断保留 Windows 错误码、设备问题码及 NTSTATUS。已在本机确认并修复一条旧离线 Wintun 接口的持久编号与运行时编号冲突，连续三次真实网卡创建和收发会话启动成功。根因与验证范围见 [虚拟网卡创建故障排查](docs/虚拟网卡创建故障排查.md)。
 
@@ -18,10 +20,10 @@
 
 ## 运行
 
-- 解压 `LLRemote-Portable-x64-0.1.12.zip` 后，运行目录中的 `LLRemote.exe` 并接受 Windows 管理员授权。应用在程序旁的 `Data` 保存本机数据。
+- 解压 `LLRemote-Portable-x64-0.1.13.zip` 后，运行目录中的 `LLRemote.exe` 并接受 Windows 管理员授权。应用在程序旁的 `Data` 保存本机数据。
 - 目录包含三个内核及其依赖，界面复用系统 WebView2。系统未安装时会提示打开微软官方安装页，安装一次后可启动。
 - 首次使用创建或验证本机 Sunshine 管理账号，然后登录皎月连。已有运行内核与 Moonlight 配对优先复用。
-- 关闭主窗口默认退出，也可以在设置里开启「关闭窗口进入托盘」。托盘的「停止本机接受控制」会暂停本次运行的被控服务。「完全退出」会关闭应用。防休眠默认开启，自启动默认关闭。
+- 关闭主窗口默认进入托盘，可以在设置里关闭「关闭窗口进入托盘」以恢复关闭即退出。已有用户明确保存的选择继续保留。托盘的「停止本机接受控制」会暂停本次运行的被控服务。「完全退出」会关闭应用。防休眠默认开启，自启动默认关闭。
 
 Sunshine 服务未运行且普通用户权限不足时，LL 使用自身受限的授权组件弹出 Windows 权限确认，完成服务启动。已运行服务通过本机 HTTPS 接口同步账号状态。普通用户读不到系统进程路径时，通过 Windows 服务 PID、监听 PID 和直接子进程确认 Sunshine 身份，再绑定公共证书。
 
@@ -77,6 +79,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package.ps1 -Portabl
 `prepare-engines.ps1` 从文档给定的 `E:\kongping` 复制运行资源，排除原配置、日志与私钥；它应在 Moonlight 扩展构建之前执行。`prepare-runtime.ps1` 只准备内核的 MSVC 依赖。交付打包要求空 Data，并在复制前过滤内核配置、日志和私钥；已有用户数据目录不会被覆盖。
 
 便携目录的数据放在程序旁 `Data`，WebView2 缓存也随该数据目录保存。壁纸保存相对路径。DPAPI 凭据绑定 Windows 用户与电脑，更换用户或电脑需要重新认证。
+
+壁纸支持 PNG、JPEG、WebP，单张上传上限为 5 MB（5 × 1024 × 1024 字节，等于上限允许）。预览和正式保存均校验大小；超限图片不会替换已选壁纸。保存后的图片经后端路径校验并授权本地资源读取。
+
+恢复默认或更换壁纸时，点击「保存」后删除旧自定义图片副本；取消编辑保留旧图。默认 SVG 与用户选择的原始文件保留。历史数据中若其他设备/账号共用同一图片，最后一个引用被移除时才删除。清理只处理应用 `Data/wallpapers` 下的图片，保存或删除失败会报告错误。
 
 ## 验证与范围
 

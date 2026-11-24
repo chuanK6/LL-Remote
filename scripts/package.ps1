@@ -1,8 +1,10 @@
-﻿param([switch]$Portable)
+﻿param([switch]$Portable, [string]$OutputRoot)
 $ErrorActionPreference = 'Stop'
 $taskWorkspace = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $taskVersion = (Get-Content -LiteralPath (Join-Path $taskWorkspace 'package.json') -Raw -Encoding UTF8 | ConvertFrom-Json).version
-$taskReleaseRoot = Join-Path $taskWorkspace 'release'
+$taskReleaseRoot = if ($OutputRoot) { [System.IO.Path]::GetFullPath((Join-Path $taskWorkspace $OutputRoot)) } else { Join-Path $taskWorkspace 'release' }
+if (-not $taskReleaseRoot.StartsWith($taskWorkspace + '\', [System.StringComparison]::OrdinalIgnoreCase)) { throw 'Package output must stay within the workspace.' }
+if ((Test-Path -LiteralPath $taskReleaseRoot) -and ((Get-Item -LiteralPath $taskReleaseRoot).Attributes -band [System.IO.FileAttributes]::ReparsePoint)) { throw 'Package output must be a real directory.' }
 $taskStage = Join-Path $taskReleaseRoot ('LLRemote-Portable-x64-' + $taskVersion)
 $taskRequired = @('src-tauri\target\release\LLRemote.exe','LLRemote.EngineHost.exe','engines\Moonlight\Moonlight.exe','engines\Sunshine\sunshine.exe','engines\Jiaoyuelian\natpierce.dll')
 foreach ($taskRequiredPath in $taskRequired) { if (-not (Test-Path -LiteralPath (Join-Path $taskWorkspace $taskRequiredPath))) { throw "Required complete-package resource missing: $taskRequiredPath" } }

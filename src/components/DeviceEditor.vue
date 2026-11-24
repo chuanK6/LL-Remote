@@ -21,9 +21,11 @@ const resetWallpaper = ref(false)
 const imagePreview = ref('')
 const imageName = ref('')
 const loading = ref(false)
+const readingImage = ref(false)
 const error = ref('')
 const previousFocus = document.activeElement as HTMLElement | null
 let objectUrl: string | undefined
+let imageRequest = 0
 
 function close() { if (!loading.value) emit('close') }
 function keydown(event: KeyboardEvent) {
@@ -36,22 +38,33 @@ function keydown(event: KeyboardEvent) {
 }
 async function chooseWallpaper() {
   if (!native) { document.getElementById('previewWallpaperInput')?.click(); return }
-  const path = await open({ multiple: false, directory: false, filters: [{ name: '图片', extensions: ['png', 'jpg', 'jpeg', 'webp'] }] })
-  if (!path || typeof path !== 'string') return
-  wallpaperPath.value = path; resetWallpaper.value = false; imageName.value = path.split(/[\\/]/).at(-1) || ''
-  // Selected files remain a draft. The backend copies the image only on Save.
-  try { imagePreview.value = await bridge.previewWallpaper(path) } catch (caught) { error.value = normalizeError(caught).message }
+  const request = ++imageRequest
+  readingImage.value = true; error.value = ''
+  try {
+    const path = await open({ multiple: false, directory: false, filters: [{ name: '图片（不超过 5 MB）', extensions: ['png', 'jpg', 'jpeg', 'webp'] }] })
+    if (!path || typeof path !== 'string' || request !== imageRequest) return
+    // Commit the draft only after validation; a rejected file keeps the old image.
+    const preview = await bridge.previewWallpaper(path)
+    if (request !== imageRequest) return
+    wallpaperPath.value = path; resetWallpaper.value = false
+    imagePreview.value = preview; imageName.value = path.split(/[\\/]/).at(-1) || ''
+  } catch (caught) {
+    if (request === imageRequest) error.value = normalizeError(caught).message
+  } finally {
+    if (request === imageRequest) readingImage.value = false
+  }
 }
 function previewFile(event: Event) {
   const file = (event.target as HTMLInputElement).files?.[0]
   if (!file) return
-  if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type) || file.size > 12 * 1024 * 1024) { error.value = '请选择不超过 12 MB 的 PNG、JPEG 或 WebP 图片。'; return }
+  if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024) { error.value = '请选择不超过 5 MB 的 PNG、JPEG 或 WebP 图片。'; return }
+  error.value = ''
   if (objectUrl) URL.revokeObjectURL(objectUrl)
   objectUrl = URL.createObjectURL(file); imagePreview.value = objectUrl; imageName.value = file.name; resetWallpaper.value = false
 }
-function restoreDefault() { resetWallpaper.value = true; wallpaperPath.value = null; imagePreview.value = ''; imageName.value = '' }
+function restoreDefault() { imageRequest++; readingImage.value = false; error.value = ''; resetWallpaper.value = true; wallpaperPath.value = null; imagePreview.value = ''; imageName.value = '' }
 async function save() {
-  if (loading.value) return
+  if (loading.value || readingImage.value) return
   if (!name.value.trim() || Array.from(name.value.trim()).length > 64) { error.value = '设备名称须为 1–64 个字符。'; return }
   loading.value = true; error.value = ''
   try {
@@ -60,10 +73,30 @@ async function save() {
   } catch (caught) { error.value = normalizeError(caught).message } finally { loading.value = false }
 }
 onMounted(async () => { document.querySelector('.shell')?.setAttribute('inert', ''); document.addEventListener('keydown', keydown); await nextTick(); nameInput.value?.focus() })
-onBeforeUnmount(() => { document.querySelector('.shell')?.removeAttribute('inert'); document.removeEventListener('keydown', keydown); previousFocus?.focus(); if (objectUrl) URL.revokeObjectURL(objectUrl) })
+onBeforeUnmount(() => { imageRequest++; document.querySelector('.shell')?.removeAttribute('inert'); document.removeEventListener('keydown', keydown); previousFocus?.focus(); if (objectUrl) URL.revokeObjectURL(objectUrl) })
 </script>
 <template>
   <Teleport to="body"><div class="device-editor-backdrop" @click.self="close"><section ref="dialog" class="device-editor" role="dialog" aria-modal="true" aria-labelledby="deviceEditorTitle"><div class="editor-heading"><h2 id="deviceEditorTitle">编辑设备</h2><button type="button" class="plain-icon" aria-label="关闭设备编辑弹窗" :disabled="loading" @click="close"><X :size="22"/></button></div>
-    <form @submit.prevent="save"><label class="form-label" for="editorName">设备名称</label><input id="editorName" ref="nameInput" v-model="name" class="text-input" maxlength="64" required autocomplete="off"/><div class="editor-favorite-row"><label for="editorFavorite">收藏设备</label><input id="editorFavorite" v-model="favorite" type="checkbox"/></div><label class="form-label" for="editorNote">备注</label><input id="editorNote" v-model="note" class="text-input" maxlength="256" placeholder="仅保存在本机"/><div class="editor-wallpaper-heading">设备壁纸</div><div class="editor-wallpaper-preview"><img v-if="imagePreview" :src="imagePreview" alt="壁纸预览"/><DeviceWallpaper v-else :path="resetWallpaper ? null : device.wallpaper"/></div><div class="wallpaper-actions"><button type="button" class="secondary" @click="chooseWallpaper">更换壁纸</button><button type="button" class="tiny-button" @click="restoreDefault">恢复默认</button><span>{{ imageName || (resetWallpaper || !device.wallpaper ? '默认壁纸' : '已保存的壁纸') }}</span></div><input v-if="!native" id="previewWallpaperInput" type="file" accept="image/png,image/jpeg,image/webp" hidden @change="previewFile"/><FeedbackMessage v-if="wallpaperPath" message="已选择图片，保存后应用到此设备。"/><FeedbackMessage :message="error" kind="error"/><div class="page-actions"><button class="secondary" type="button" :disabled="loading" @click="close">取消</button><button class="primary" type="submit" :disabled="loading">{{ loading ? '正在保存…' : '保存' }}</button></div></form>
+    <form @submit.prevent="save">
+      <label class="form-label" for="editorName">设备名称</label>
+      <input id="editorName" ref="nameInput" v-model="name" class="text-input" maxlength="64" required autocomplete="off"/>
+      <div class="editor-favorite-row"><label for="editorFavorite">收藏设备</label><input id="editorFavorite" v-model="favorite" type="checkbox"/></div>
+      <label class="form-label" for="editorNote">备注</label>
+      <input id="editorNote" v-model="note" class="text-input" maxlength="256" placeholder="仅保存在本机"/>
+      <div class="editor-wallpaper-heading">设备壁纸（PNG、JPEG、WebP，不超过 5 MB）</div>
+      <div class="editor-wallpaper-preview"><img v-if="imagePreview" :src="imagePreview" alt="壁纸预览"/><DeviceWallpaper v-else :path="resetWallpaper ? null : device.wallpaper"/></div>
+      <div class="wallpaper-actions">
+        <button type="button" class="secondary" :disabled="loading || readingImage" @click="chooseWallpaper">更换壁纸</button>
+        <button type="button" class="tiny-button" :disabled="loading" @click="restoreDefault">恢复默认</button>
+        <span>{{ imageName || (resetWallpaper || !device.wallpaper ? '默认壁纸' : '已保存的壁纸') }}</span>
+      </div>
+      <input v-if="!native" id="previewWallpaperInput" type="file" accept="image/png,image/jpeg,image/webp" hidden @change="previewFile"/>
+      <FeedbackMessage v-if="wallpaperPath" message="已选择图片，保存后应用到此设备。"/>
+      <FeedbackMessage :message="error" kind="error"/>
+      <div class="page-actions">
+        <button class="secondary" type="button" :disabled="loading" @click="close">取消</button>
+        <button class="primary" type="submit" :disabled="loading || readingImage">{{ readingImage ? '正在读取图片…' : loading ? '正在保存…' : '保存' }}</button>
+      </div>
+    </form>
   </section></div></Teleport>
 </template>

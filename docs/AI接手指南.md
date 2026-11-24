@@ -1,6 +1,12 @@
 # LL远程 AI 接手指南
 
-适用快照：2026-11-23，软件 0.1.12。项目拥有者确认初版已经能够正常使用；接手工作应从现有实现继续。
+适用快照：2026-11-24，软件 0.1.13。项目拥有者确认 0.1.12 初版能够正常使用，并确认 0.1.13 功能测试通过；后续壁纸清理改动另行定向验证。
+
+0.1.13：壁纸经 `wallpaper_path` 校验后按文件授予资源访问权限，解决 Windows 下保存后读取 403；`storage.rs::read_wallpaper` 对预览和保存统一限制 5 MB。设备编辑器验证成功才更新图片草稿，默认关闭到托盘（已有明确保存的选择不覆盖），共享画质组件数值步长 1 Mbps。新便携包单独输出，0.1.12 保留。用户指定后续运行测试自行完成，本次结果见 [0.1.13 记录](validation/0.1.13.json)。
+
+用户确认原 0.1.13 功能测试通过后，要求恢复默认/更换图片并保存时删除旧自定义壁纸。`Store::edit_device` 先持久化新记录，再删除已无设备引用的旧副本；保存失败保留旧记录并清理未提交的新导入，删除失败尝试恢复原设置。仅处理 `Data/wallpapers` 下直接存放的 PNG/JPEG/WebP，检查实际路径，默认 SVG 和来源文件不删。用户要求保持 0.1.13 版本号；最终发布包使用 `package.ps1 -OutputRoot .work/github-release-0.1.13` 独立生成，保留本机已使用的同版本目录及 ZIP。
+
+用户随后明确要求替换本机 0.1.13：更新程序和 ZIP，保留 Data、根目录 config 及其他本机配置；替换前程序文件与 ZIP 在 `.work` 单独备份，用户数据逐文件核对不变。0.1.12 继续原样保留。下载包从独立干净目录制作，不能把已运行的本机目录直接压缩上传。
 
 源码仓库应包含哪些文件、哪些原生资源需要在克隆后补齐，见 [Git 上传清单](Git上传清单.md) 和 [当前上传文件列表](Git上传文件列表.txt)。
 
@@ -131,10 +137,12 @@ Windows 自动 Block 规则可能覆盖 Allow 规则。不要用关闭整个防�
 ```powershell
 node scripts/tauri.mjs build --no-bundle --config src-tauri/tauri.release.conf.json
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package.ps1 -Portable
-python scripts/verify-bundle.py release/LLRemote-Portable-x64-0.1.12 --reference .
+python scripts/verify-bundle.py release/LLRemote-Portable-x64-0.1.13 --reference . --require-clean-data
 ```
 
 示例校验路径对应当前版本；升级后换成新版本目录。`package.ps1` 从 `package.json` 读取版本，直接使用 `src-tauri/target/release/LLRemote.exe` 等资源，要求扩展清单和 UTF-8 Sunshine 标记正确。先构建再打包，避免把旧 EXE 当作新改动交付。
+
+同版本本机目录已经运行过时，可使用 `-OutputRoot .work/github-release-0.1.13` 生成独立干净目录；输出必须位于工作区内。最终包与源码提交对应，ZIP 和 SHA-256 上传到该版本 GitHub Releases。功能测试来自用户确认与定向文件回归，不能扩展为跨电脑或干净系统全部通过。
 
 打包脚本生成完整便携目录，不会自动刷新同名 ZIP。需要压缩交付时，另行生成 ZIP，解压到隔离目录并验证；交付包 Data 必须为空，运行资源不能含用户配置、日志或私钥。同名输出已有用户 Data 时脚本会拒绝覆盖，应保留原目录并使用明确的新输出，不能删除用户数据绕过检查。
 
@@ -187,7 +195,7 @@ python scripts/prepare-sources.py
 ## 11. 可以直接发给其他 AI 的接手提示
 
 ```text
-请接手当前工作区的 LL远程项目。当前软件版本 0.1.12，项目拥有者已确认初版能够正常使用。
+请接手当前工作区的 LL远程项目。当前软件版本 0.1.13，项目拥有者已确认其功能测试通过，追加壁纸清理使用隔离文件定向验证。
 先阅读 AGENTS.md、docs/项目总结.md、docs/AI接手指南.md 和 docs/版本演进记录.md，
 再查看 package.json、src/bridge.ts、src/stores/app.ts、src-tauri/src/commands.rs、
 src-tauri/src/runtime.rs 和本次任务相关模块。

@@ -76,7 +76,7 @@ async function commitQuality(kind: 'resolution' | 'fps' | 'bitrate') {
       <div class="bitrate-control">
         <input id="quality-bitrate" v-model.number="bitrate" type="range" :min="minBitrate" :max="maxBitrate" step="any"
           :aria-valuetext="`${bitrate} Mbps`" :disabled="disabled" @change="commitQuality('bitrate')" />
-        <input class="bitrate-number" type="number" :min="minBitrate" :max="maxBitrate" step="0.001"
+        <input class="bitrate-number" type="number" :min="minBitrate" :max="maxBitrate" step="1"
           aria-label="码率数值（Mbps）" :value="bitrate" :disabled="disabled"
           @focus="bitrateAtFocus = bitrate" @input="editBitrate" @blur="commitBitrate" @keydown.enter.prevent="($event.currentTarget as HTMLInputElement).blur()" />
         <span class="bitrate-unit" aria-hidden="true">Mbps</span>

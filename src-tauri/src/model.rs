@@ -152,7 +152,7 @@ pub struct Preferences {
     pub prevent_sleep: bool,
     pub keep_display_awake: bool,
     pub autostart: bool,
-    // Require a fresh opt-in because older releases saved tray closing as the default.
+    // Existing explicit choices remain persisted; fresh installs close to tray.
     pub keep_running_in_tray_on_close: bool,
     pub remember_login: bool,
     pub auto_retry: bool,
@@ -175,7 +175,7 @@ impl Default for Preferences {
             prevent_sleep: true,
             keep_display_awake: false,
             autostart: false,
-            keep_running_in_tray_on_close: false,
+            keep_running_in_tray_on_close: true,
             remember_login: true,
             auto_retry: true,
             always_accept_control: false,

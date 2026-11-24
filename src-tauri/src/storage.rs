@@ -7,6 +7,7 @@ use std::{
     cmp::Reverse,
     collections::HashSet,
     fs,
+    io::Read,
     path::{Path, PathBuf},
 };
 use zeroize::{Zeroize, Zeroizing};
@@ -217,11 +218,19 @@ impl Store {
                 && !incoming.host_name.trim().is_empty()
             {
                 let mut candidates = matches.iter().filter(|device| {
-                    device.uuid.as_deref().is_some_and(|uuid| !uuid.trim().is_empty())
-                        && device.nat_id.as_deref()
+                    device
+                        .uuid
+                        .as_deref()
+                        .is_some_and(|uuid| !uuid.trim().is_empty())
+                        && device
+                            .nat_id
+                            .as_deref()
                             .zip(incoming.nat_id.as_deref())
                             .is_some_and(|(saved, reported)| saved.eq_ignore_ascii_case(reported))
-                        && device.host_name.trim().eq_ignore_ascii_case(incoming.host_name.trim())
+                        && device
+                            .host_name
+                            .trim()
+                            .eq_ignore_ascii_case(incoming.host_name.trim())
                 });
                 candidates
                     .next()
@@ -235,7 +244,10 @@ impl Store {
                     || directory_match.as_deref() == Some(device.id.as_str())
                     || (device.uuid.is_none()
                         && (directory_match.is_none()
-                            || device.host_name.trim().eq_ignore_ascii_case(incoming.host_name.trim())))
+                            || device
+                                .host_name
+                                .trim()
+                                .eq_ignore_ascii_case(incoming.host_name.trim())))
             });
         }
         let primary = matches
@@ -339,9 +351,8 @@ impl Store {
             self.account_data
                 .devices
                 .retain(|d| !matches.iter().any(|matched| matched.id == d.id));
-            let unverified_account_name = incoming.source == "account"
-                && incoming.uuid.is_none()
-                && current.uuid.is_some();
+            let unverified_account_name =
+                incoming.source == "account" && incoming.uuid.is_none() && current.uuid.is_some();
             if !latest.host_name.is_empty() && !unverified_account_name {
                 if current.display_name.is_empty() || current.display_name == current.host_name {
                     current.display_name = latest.host_name.clone();
@@ -408,24 +419,138 @@ impl Store {
             ));
         }
         let device = self.device(&edit.device_id)?;
+        let changing_wallpaper = edit.reset_wallpaper || edit.wallpaper_path.is_some();
+        let obsolete = if changing_wallpaper {
+            device
+                .wallpaper
+                .as_deref()
+                .map(|relative| self.obsolete_wallpaper(relative, &device.id))
+                .transpose()?
+                .flatten()
+        } else {
+            None
+        };
         let wallpaper = if edit.reset_wallpaper {
             None
         } else if let Some(path) = &edit.wallpaper_path {
             Some(self.import_wallpaper(Path::new(path))?)
         } else {
-            device.wallpaper
+            device.wallpaper.clone()
         };
-        let current = self
+        let imported = edit.wallpaper_path.is_some() && !edit.reset_wallpaper;
+        let index = self
             .account_data
             .devices
-            .iter_mut()
-            .find(|d| d.id == edit.device_id)
+            .iter()
+            .position(|d| d.id == edit.device_id)
             .unwrap();
+        let current = &mut self.account_data.devices[index];
         current.display_name = name.into();
         current.favorite = edit.favorite;
         current.note = edit.note.trim().into();
-        current.wallpaper = wallpaper;
-        self.save_devices()
+        current.wallpaper = wallpaper.clone();
+        if let Err(error) = self.save_devices() {
+            self.account_data.devices[index] = device;
+            if imported {
+                if let Some(relative) = &wallpaper {
+                    fs::remove_file(self.root.join(relative))?;
+                }
+            }
+            return Err(error);
+        }
+        // Delete only the superseded managed copy after saving the new record.
+        // The selected source and bundled default are never cleanup targets.
+        if let Some(path) = obsolete {
+            if let Err(error) = fs::remove_file(&path) {
+                if error.kind() != std::io::ErrorKind::NotFound {
+                    let committed =
+                        std::mem::replace(&mut self.account_data.devices[index], device);
+                    if self.save_devices().is_err() {
+                        self.account_data.devices[index] = committed;
+                        return Err(AppError::new(
+                            ErrorCode::StorageFailed,
+                            "设备设置已保存，但旧壁纸删除失败，请检查壁纸目录权限。",
+                        ));
+                    }
+                    if imported {
+                        if let Some(relative) = &wallpaper {
+                            fs::remove_file(self.root.join(relative))?;
+                        }
+                    }
+                    return Err(AppError::new(
+                        ErrorCode::StorageFailed,
+                        "旧壁纸无法删除，已保留原设置，请检查图片是否被占用或设为只读。",
+                    ));
+                }
+            }
+        }
+        Ok(())
+    }
+    fn obsolete_wallpaper(&self, relative: &str, device_id: &str) -> Result<Option<PathBuf>> {
+        let path = Path::new(relative);
+        // Only flat custom bitmaps in Data/wallpapers are managed by LL.
+        // Default SVG assets and paths outside that directory are preserved.
+        if !relative.starts_with("wallpapers/")
+            || path.components().count() != 2
+            || path
+                .components()
+                .any(|part| !matches!(part, std::path::Component::Normal(_)))
+            || !path.extension().is_some_and(|extension| {
+                matches!(
+                    extension.to_string_lossy().to_ascii_lowercase().as_str(),
+                    "png" | "jpg" | "jpeg" | "webp"
+                )
+            })
+        {
+            return Ok(None);
+        }
+        if self
+            .account_data
+            .devices
+            .iter()
+            .any(|device| device.id != device_id && device.wallpaper.as_deref() == Some(relative))
+        {
+            return Ok(None);
+        }
+        // Imports are unique, but legacy records can share a managed image.
+        let accounts = self.root.join("accounts");
+        if accounts.exists() {
+            for entry in fs::read_dir(accounts)? {
+                let entry = entry?;
+                if !entry.file_type()?.is_dir() || entry.file_name() == self.account_scope.as_str()
+                {
+                    continue;
+                }
+                let (account, _): (AccountData, bool) =
+                    read_json(&entry.path().join("devices.json"))?;
+                if account
+                    .devices
+                    .iter()
+                    .any(|device| device.wallpaper.as_deref() == Some(relative))
+                {
+                    return Ok(None);
+                }
+            }
+        }
+        let absolute = self.root.join(path);
+        let metadata = match fs::symlink_metadata(&absolute) {
+            Ok(metadata) => metadata,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+            Err(error) => return Err(error.into()),
+        };
+        let root = self.root.canonicalize()?;
+        let directory = self.root.join("wallpapers").canonicalize()?;
+        if !metadata.is_file()
+            || metadata.file_type().is_symlink()
+            || directory != root.join("wallpapers")
+            || absolute.canonicalize()?.parent() != Some(directory.as_path())
+        {
+            return Err(AppError::new(
+                ErrorCode::PermissionDenied,
+                "旧壁纸不在应用壁纸目录内，无法删除。",
+            ));
+        }
+        Ok(Some(absolute))
     }
     fn import_wallpaper(&self, path: &Path) -> Result<String> {
         let (bytes, extension) = read_wallpaper(path)?;
@@ -458,14 +583,23 @@ impl Store {
 }
 
 pub fn read_wallpaper(path: &Path) -> Result<(Vec<u8>, &'static str)> {
-    let meta = fs::metadata(path)?;
-    if !meta.is_file() || meta.len() > 12 * 1024 * 1024 {
+    const MAX_BYTES: u64 = 5 * 1024 * 1024;
+    let file = fs::File::open(path)?;
+    let meta = file.metadata()?;
+    if !meta.is_file() || meta.len() > MAX_BYTES {
         return Err(AppError::new(
             ErrorCode::InvalidInput,
-            "请选择不超过 12 MB 的 PNG、JPEG 或 WebP 图片。",
+            "请选择不超过 5 MB 的 PNG、JPEG 或 WebP 图片。",
         ));
     }
-    let bytes = fs::read(path)?;
+    let mut bytes = Vec::new();
+    file.take(MAX_BYTES + 1).read_to_end(&mut bytes)?;
+    if bytes.len() as u64 > MAX_BYTES {
+        return Err(AppError::new(
+            ErrorCode::InvalidInput,
+            "请选择不超过 5 MB 的 PNG、JPEG 或 WebP 图片。",
+        ));
+    }
     let extension = if bytes.starts_with(b"\x89PNG\r\n\x1a\n") {
         "png"
     } else if bytes.starts_with(b"\xff\xd8\xff") {

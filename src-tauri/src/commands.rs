@@ -8,7 +8,7 @@ use crate::{
     storage::{SecretRecord, Vault},
 };
 use std::{sync::Arc, time::SystemTime};
-use tauri::{State, WebviewWindow};
+use tauri::{Manager, State, WebviewWindow};
 use tokio_util::sync::CancellationToken;
 use zeroize::Zeroizing;
 type Backend<'a> = State<'a, Arc<Runtime>>;
@@ -416,11 +416,13 @@ pub async fn wallpaper_path(
     relative: String,
 ) -> Result<String> {
     main_only(&window)?;
-    Ok(runtime
-        .store()?
-        .wallpaper_path(&relative)?
-        .to_string_lossy()
-        .into())
+    let path = runtime.store()?.wallpaper_path(&relative)?;
+    // The data root can be portable or a debug override. Grant only this
+    // validated, canonical file instead of relying on config-time glob paths.
+    window.asset_protocol_scope().allow_file(&path).map_err(|_| {
+        AppError::new(ErrorCode::PermissionDenied, "无法授权读取此壁纸，请重新选择图片。")
+    })?;
+    Ok(path.to_string_lossy().into())
 }
 #[tauri::command]
 pub fn preview_wallpaper(window: WebviewWindow, path: String) -> Result<String> {
