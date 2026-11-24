@@ -11,7 +11,14 @@ function updatePassword() { router.push({ path: '/assist', query: { mode: 'other
 </script>
 <template>
   <div v-if="!['idle', 'canceled', 'disconnected', ''].includes(app.snapshot.session.stage)" :class="['connection-banner', { failed: ['failed', 'disconnectFailed'].includes(app.snapshot.session.stage) }]" role="status">
-    <div><span v-if="isConnecting(app.snapshot.session.stage) || app.snapshot.session.stage === 'disconnecting'" class="spinner" /><strong>{{ stageLabel(app.snapshot.session.stage) }}</strong><p v-if="app.snapshot.session.error">{{ app.snapshot.session.error.message }}</p><p v-else-if="app.snapshot.session.deviceName">{{ app.snapshot.session.deviceName }}<span v-if="app.snapshot.session.attempt > 1"> · 第 {{ app.snapshot.session.attempt }} 次尝试</span></p><p v-if="app.snapshot.session.stage === 'pairing' && app.snapshot.session.pin" class="banner-pin">配对 PIN <strong>{{ app.snapshot.session.pin }}</strong></p></div>
+    <div>
+      <span v-if="isConnecting(app.snapshot.session.stage) || app.snapshot.session.stage === 'disconnecting'" class="spinner" />
+      <strong>{{ stageLabel(app.snapshot.session.stage) }}</strong>
+      <p v-if="app.snapshot.session.error">{{ app.snapshot.session.error.message }}</p>
+      <p v-else-if="app.snapshot.session.deviceName">{{ app.snapshot.session.deviceName }}<span v-if="app.snapshot.session.attempt > 1"> · 第 {{ app.snapshot.session.attempt }} 次尝试</span></p>
+      <p v-if="app.snapshot.session.stage === 'pairing' && app.snapshot.session.pin" class="banner-pin">配对 PIN <strong>{{ app.snapshot.session.pin }}</strong></p>
+      <p v-if="app.snapshot.session.localAcceptancePaused" class="role-paused">本机接受控制暂时暂停，远控结束后延迟检查并恢复。</p>
+    </div>
     <div class="banner-actions">
       <button v-if="app.snapshot.session.stage === 'pairing'" class="small-button" @click="router.push('/pairing')">查看配对 PIN</button>
       <button v-if="isConnecting(app.snapshot.session.stage)" class="tiny-button" :disabled="app.loading" @click="cancel">取消</button>
@@ -26,4 +33,5 @@ function updatePassword() { router.push({ path: '/assist', query: { mode: 'other
 <style scoped>
 .connection-banner .banner-pin { color: #2a6fc7; font-size: 18px; }
 .banner-pin strong { margin-left: 10px; letter-spacing: 4px; font-variant-numeric: tabular-nums; font-weight: 600; }
+.role-paused { margin: 0; font-size: 12px; color: #577b9e; }
 </style>

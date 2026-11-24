@@ -35,6 +35,7 @@ export const bridge = {
   deleteDevice: async (deviceId: string): Promise<AppSnapshot> => {
     if (native) return call('delete_device', { deviceId })
     browserSnapshot.devices = browserSnapshot.devices.filter(device => device.id !== deviceId)
+    browserSnapshot.history = browserSnapshot.history.filter(entry => entry.deviceId !== deviceId)
     return structuredClone(browserSnapshot)
   },
   saveStream: async (deviceId: string | null, preferences: StreamPreferences): Promise<AppSnapshot> => {
@@ -47,6 +48,7 @@ export const bridge = {
   saveQuickApps: (deviceId: string, apps: string[]) => call<AppSnapshot>('save_quick_apps', { deviceId, apps }),
   associateHost: (deviceId: string, natId: string) => call<AppSnapshot>('associate_host', { deviceId, natId }),
   connect: (request: ConnectRequest) => call<SessionSnapshot>('connect_device', { request }),
+  roleSwitchDecision: (sessionId: string, enabled: boolean) => call<void>('resolve_role_switch', { sessionId, enabled }),
   cancel: () => call<SessionSnapshot>('cancel_connection'),
   disconnect: (sessionId: string) => call<SessionSnapshot>('disconnect_session', { sessionId }),
   disconnectDevice: (deviceId: string) => call<AppSnapshot>('disconnect_device', { deviceId }),

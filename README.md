@@ -8,9 +8,11 @@
 
 源码仓库：[chuanK6/LL-Remote](https://github.com/chuanK6/LL-Remote)，主分支 `main`。
 
-应用下载：[0.1.13 发布页](https://github.com/chuanK6/LL-Remote/releases/tag/v0.1.13) · [Windows x64 便携版 ZIP](https://github.com/chuanK6/LL-Remote/releases/download/v0.1.13/LLRemote-Portable-x64-0.1.13.zip) · [SHA-256 校验文件](https://github.com/chuanK6/LL-Remote/releases/download/v0.1.13/LLRemote-Portable-x64-0.1.13.zip.sha256.txt)。公开下载包不包含发布者的本机 Data 和配置。旧版 [0.1.12 发布页](https://github.com/chuanK6/LL-Remote/releases/tag/v0.1.12) 保留。
+应用下载：[0.1.14 发布页](https://github.com/chuanK6/LL-Remote/releases/tag/v0.1.14) · [Windows x64 便携版 ZIP](https://github.com/chuanK6/LL-Remote/releases/download/v0.1.14/LLRemote-Portable-x64-0.1.14.zip) · [SHA-256 校验文件](https://github.com/chuanK6/LL-Remote/releases/download/v0.1.14/LLRemote-Portable-x64-0.1.14.zip.sha256.txt)。公开下载包不包含发布者的本机 Data 和配置。旧版 [0.1.12 发布页](https://github.com/chuanK6/LL-Remote/releases/tag/v0.1.12) 保留。 旧版 [0.1.13 发布页](https://github.com/chuanK6/LL-Remote/releases/tag/v0.1.13) 也保留。
 
-当前版本为 0.1.13：修复壁纸资源加载权限，上传图片限制为 5 MB，恢复默认或更换后删除旧自定义图片，默认开启关闭窗口进入托盘，码率数值框每步调整 1 Mbps。用户确认原 0.1.13 功能测试通过；追加的壁纸文件清理单独验证。本机 0.1.13 程序和 ZIP 同步更新，Data 与配置保留，0.1.12 原样保留。最终干净发布包在独立目录生成。[更新日志](CHANGELOG.md)
+当前源码及便携版为 0.1.14，用户已反馈「目前测试没有问题」并授权发布。新增自动切换角色、独立连接记录及收藏卡片、直接硬删除，修复旧 Data 路径和悬浮窗口显示；完整变更和升级步骤见 [0.1.14 发布说明](docs/releases/0.1.14.md)。0.1.13 的壁纸修复、5 MB 上限、默认托盘及 1 Mbps 步长继续保留。[更新日志](CHANGELOG.md)
+
+0.1.14 原候选收到移动 Data 后重建旧版目录、全屏连接不显示悬浮球的反馈。修正版启动时更新随包 Sunshine 的旧绝对路径，调整悬浮球创建及显示，性能监测默认关闭且关闭时不创建窗口。新连接默认窗口模式，会话内切换全屏及内部重连继续可用；最新版本已有用户当前测试无问题的确认。
 
 使用系统共享 WebView2。接受控制并行启动皎月连和 Sunshine，并在后台准备限定到组网接口的防火墙规则。远程设备按已确认的身份复用记录。主程序请求 Windows 管理员权限，网络宿主在加载内核前按绝对路径预加载 Wintun DLL。
 
@@ -20,7 +22,12 @@
 
 ## 运行
 
-- 解压 `LLRemote-Portable-x64-0.1.13.zip` 后，运行目录中的 `LLRemote.exe` 并接受 Windows 管理员授权。应用在程序旁的 `Data` 保存本机数据。
+**升级用户请先保存旧版整个 Data 文件夹。** 从托盘「完全退出」旧版，再完整解压新版，将旧 Data 复制到新版 EXE 同级目录，替换下载包的空 Data；同机同 Windows 用户无需重新配置账号、设备、收藏、画质和配对。不要只保留 preferences.json，也不要套成 Data/Data。更换电脑或 Windows 用户时，加密凭据需要重新认证。步骤见 [升级说明](docs/releases/0.1.14.md)。
+
+收藏设备和连接记录使用同一套列表卡片，悬停出现删除按钮，点击立即删除设备及其全部连接记录、收藏，不再确认。设备资料已移除的历史不在列表显示。恢复备份同步清理，默认图和其他设备共享的资料保留；升级程序仍保留用户 Data，删除仅由用户在应用内点击触发。
+0.1.14 的「我的设备」仅显示同账号在线主机；旧连接资料保留在「开始协助」下方的「连接记录」入口中。记录按时间排列为可高亮的列表卡片，进入详情后可返回列表，不显示主机在线状态。设备名右侧的五角星可直接收藏，收藏后变为黄色并提示；已有收藏、配置和配对保留。用户已确认当前测试无问题。
+
+- 完整解压 `LLRemote-Portable-x64-0.1.14.zip` 后运行 `LLRemote.exe` 并接受管理员授权。程序旁的 `Data` 保存本机数据。
 - 目录包含三个内核及其依赖，界面复用系统 WebView2。系统未安装时会提示打开微软官方安装页，安装一次后可启动。
 - 首次使用创建或验证本机 Sunshine 管理账号，然后登录皎月连。已有运行内核与 Moonlight 配对优先复用。
 - 关闭主窗口默认进入托盘，可以在设置里关闭「关闭窗口进入托盘」以恢复关闭即退出。已有用户明确保存的选择继续保留。托盘的「停止本机接受控制」会暂停本次运行的被控服务。「完全退出」会关闭应用。防休眠默认开启，自启动默认关闭。
@@ -48,6 +55,10 @@ Moonlight 高级设置使用当前选中设备的参数，其支持的画质、�
 当前皎月连接口没有可确认的余额字段，账号页显示“暂无法读取”。识别码连接成功后会保存组网地址及确认过的主机身份。账号密码和历史连接密码使用 Windows DPAPI，普通设备 JSON 只保存凭据引用。
 
 ## 开发
+
+0.1.14 在「设置 → 本机接受控制」增加「自动切换角色」，默认关闭。本机与目标组网地址相同且本机正在接受控制时，未开启会弹窗提供「开启功能」或「停止连接」。确认后保存选项、暂停本机接受控制并继续连接。
+
+真正断开时，先确认串流和客户端组网退出，再等待至少 3 秒检查并恢复。分辨率、帧率、码率等内部重连保留原会话和暂停记录；手动停止本机接受控制或完全退出取消自动恢复。恢复失败提示原因并稍后重试。性能卡片跟随 Moonlight 客户区右下角，最小化或窗口不可用时隐藏。
 
 要求 Node.js 24、Rust stable MSVC、Windows SDK、Visual Studio C++ Build Tools 与系统 Microsoft Edge WebView2 Runtime。脚本自动找到当前用户 Cargo 和 VS 工具链，不修改全局 PATH。Windows 主程序只生成需要的 Rust rlib，不额外生成移动端用的静态库和动态库。
 

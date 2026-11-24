@@ -1,6 +1,10 @@
 # LL远程 AI 接手指南
 
-适用快照：2026-11-24，软件 0.1.13。项目拥有者确认 0.1.12 初版能够正常使用，并确认 0.1.13 功能测试通过；后续壁纸清理改动另行定向验证。
+适用快照：2026-11-24，源码/发布软件 0.1.14，用户反馈当前测试无问题并授权发布，运行验收由用户完成。0.1.13 已发布并有用户功能通过确认及壁纸清理定向记录。
+
+0.1.14 角色切换位于 `src-tauri/src/runtime/role_switch.rs`，作为 runtime 子模块保存逻辑会话暂停记录及仅存在内存中的清零凭据。`automaticRoleSwitch` 默认 false。地址在连接前检查；同账号地址只能连接后确认时，结束本次客户端组网并在同一会话中重建一次。`resolve_role_switch` 仅允许主窗口针对当前待确认会话作决定，批准后持久化选项，拒绝不暂停本机服务。前端弹窗在 `RoleSwitchDialog.vue`，固定描述由 `src/role-switch.ts` 与设置页共用。
+
+恢复仅从真实结束及清理完成处调度。至少等待 3 秒后核对相同会话 ID、终止阶段、`changing=false`、无 Moonlight 子进程和皎月连客户端连接、账号相同、手动操作代数未变化。画质等内部重连保持原 ID 和暂停记录，`update_session`/`kill_stream` 不调度恢复。停止失败保留进程句柄；恢复失败保留记录，8 秒后重试。手动停止、退出撤销恢复，始终接受控制的后台恢复也受暂停记录约束。性能卡片按 `controls.rs` 的原始客户区定位，悬浮球继续使用已有可见区域边界。见 [0.1.14 记录](validation/0.1.14.json)。
 
 0.1.13：壁纸经 `wallpaper_path` 校验后按文件授予资源访问权限，解决 Windows 下保存后读取 403；`storage.rs::read_wallpaper` 对预览和保存统一限制 5 MB。设备编辑器验证成功才更新图片草稿，默认关闭到托盘（已有明确保存的选择不覆盖），共享画质组件数值步长 1 Mbps。新便携包单独输出，0.1.12 保留。用户指定后续运行测试自行完成，本次结果见 [0.1.13 记录](validation/0.1.13.json)。
 
@@ -11,6 +15,23 @@
 源码仓库应包含哪些文件、哪些原生资源需要在克隆后补齐，见 [Git 上传清单](Git上传清单.md) 和 [当前上传文件列表](Git上传文件列表.txt)。
 
 ## 1. 十分钟了解项目
+
+2026-11-24 用户明确反馈「目前测试没有问题」并授权 GitHub 发布。保留各实现阶段的待验记录作为历史，当前用户结论见 `validation/0.1.14.json`；不要把用户一般反馈扩大为逐项测试矩阵全部通过。本次不改程序、不重测，用验收的同一 EXE 制作空 Data 发布包，附 [修复与 Data 升级说明](releases/0.1.14.md)。升级提醒面向下载用户：保存整个旧 Data 后复制到新版，同机同 Windows 用户无需重新配置；当前个人 Data 留在本机，不打入 Git 或 Release。
+
+最新追加的收藏/历史列表由 `SavedDeviceList.vue` 共用卡片渲染，无主机状态，悬停/键盘聚焦出现删除按钮，按钮独立于详情链接，点击不进入详情或弹确认。`HistoryPage.vue` 仅展示能按 deviceId 找到当前资料的历史，失去资料的历史不计入列表/数量；收藏详情 `/favorites/device/:id` 可返回收藏并保留搜索。
+
+`Store::remove_device` 现在硬删除目标设备、收藏及该 ID 的全部历史。私有 `write_atomic(..., false)` 先更新已清理的 devices.bak，再替换 devices.json，两处均不包含删除记录，其他正常保存仍沿用原备份规则。只清理确属本账号目标身份且无其他设备/账号引用的连接授权，以及 `obsolete_wallpaper` 已校验的无引用自定义图；不清理默认图、来源文件、其他设备或独立内核原生配对。用户 Data 本轮不实际执行删除，应用内点击才触发。
+
+`delete_device` 保留主窗口及会话门闩权限，加管理锁，删除前仅在缓存连接确认匹配目标时断开其客户端组网。设置同步遇到已删除设备会撤销旧绑定，不再让后续 snapshot 失败。清理失败返回错误并刷新显示真实保存结果，不报虚假成功。仍不运行单测、桌面或内核测试，用户负责运行验收。
+0.1.14 追加连接记录页面：`MainSidebar.vue` 与普通 `DevicesPage.vue` 共用 store 的 `onlineAccountDevices`，仅取后端 `accountOnline === true` 且已认证的当前账号设备。不能用历史 `source` 或 `networkConnected` 判断目录成员：同账号主机可能保存过识别码，合并后 `source` 为 code。`Runtime::refresh` 每次清除旧 `account_online`，仅对新 `pclist` 在线行的合并结果标记 true；刷新失败/未登录清除标记，`snapshot` 还核对登录状态。`Device.account_online` 跳过反序列化，磁盘旧在线状态不会在启动时生效。
+
+`/history` 由 `HistoryPage.vue` 按时间解析值倒序显示现有历史，列表卡片显示名称、连接方式、识别码和时间，不显示主机状态。无详细历史条目的旧识别码/已有连接资料在内存中补充展示，不创建重复历史条目；没有连接时间时标记「时间未记录」并排在末尾，不使用导入时间代替连接时间。详情 `/history/record/:id` 按历史 ID 查记录，再按其当前 deviceId 查资料，保持合并后引用有效；旧资料详情为 `/history/device/:id`。历史引用的设备已删除时不在列表显示；直接打开旧详情链接仍可返回，不猜测或重新创建设备。旧 `/history/:deviceId` 重定向为全局列表的设备筛选。
+
+`DevicePage.vue` 复用原桌面、设置、快速启动布局，记录详情隐藏主机状态，返回时保留列表搜索/筛选。星标收藏直接使用原受限 `edit_device` 保存，仅切换 favorite，保留名字、备注和壁纸；收藏成功变黄并提示，取消可撤销。编辑弹窗收藏项移除。`App.vue` 对历史详情解析实际设备 ID，保证画质/输入设置仍作用于该设备。运行测试由用户完成，不能将编译或资源校验写作列表、收藏或原回归已经实测通过。
+
+0.1.14 原候选用户验收反馈失败：旧 Data 内 Sunshine 六个绝对路径指向 0.1.12，验证账号会创建旧目录；全屏连接看不到悬浮球，本机日志记录性能窗口和控制窗口创建失败，但旧日志没有底层错误。修正版 `SunshineAdapter::new` 在非外部服务模式下先执行 `rebase_managed_config`，仅更新上述 LL 管理路径到当前 Data，再解析账号/证书位置；不删除或移动账号、配对，不改外部 Sunshine 服务配置。现有旧目录可能含用户资料，不能擅自清理。
+
+修正版 `controls.rs` 的会话窗口继承主窗口配置，通过 `with_webview` 在界面线程复用主窗口已有 WebView2 环境创建，保留实际 Tauri 错误。串流成功先恢复 Moonlight 前台并创建/定位悬浮球，随后按开关创建性能窗口；性能监测默认 false，关闭时不创建，开启时由命令延迟创建。悬浮窗口等最终版本已有用户当前测试无问题反馈，未提供全屏叠加的逐项结果，也未证明旧失败的底层原因。用户追加要求新连接默认窗口：`connect_attempt` 仅对新连接启动参数设置 `windowed`，不修改 `update_session` 的内部重连参数，因此会话内主动选全屏后调画质保持全屏。见同版本修正记录，未运行单测或应用/内核测试。
 
 先阅读 [项目总结](项目总结.md)，了解产品和三个内核分工，再看 [版本演进记录](版本演进记录.md) 的版本总表与 0.1.9—0.1.12。然后打开 `package.json`、`src/bridge.ts`、`src/stores/app.ts`、`src-tauri/src/commands.rs` 和 `src-tauri/src/runtime.rs`，把“界面操作如何变成原生行为”串起来。
 
@@ -137,7 +158,7 @@ Windows 自动 Block 规则可能覆盖 Allow 规则。不要用关闭整个防�
 ```powershell
 node scripts/tauri.mjs build --no-bundle --config src-tauri/tauri.release.conf.json
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package.ps1 -Portable
-python scripts/verify-bundle.py release/LLRemote-Portable-x64-0.1.13 --reference . --require-clean-data
+python scripts/verify-bundle.py release/LLRemote-Portable-x64-0.1.14 --reference . --require-clean-data
 ```
 
 示例校验路径对应当前版本；升级后换成新版本目录。`package.ps1` 从 `package.json` 读取版本，直接使用 `src-tauri/target/release/LLRemote.exe` 等资源，要求扩展清单和 UTF-8 Sunshine 标记正确。先构建再打包，避免把旧 EXE 当作新改动交付。
@@ -195,7 +216,7 @@ python scripts/prepare-sources.py
 ## 11. 可以直接发给其他 AI 的接手提示
 
 ```text
-请接手当前工作区的 LL远程项目。当前软件版本 0.1.13，项目拥有者已确认其功能测试通过，追加壁纸清理使用隔离文件定向验证。
+请接手当前工作区的 LL远程项目。当前源码/发布便携版 0.1.14，用户已确认当前测试无问题并授权发布；不补写未提供的逐项测试结果。0.1.13 已发布并有用户功能通过确认及壁纸清理定向记录。
 先阅读 AGENTS.md、docs/项目总结.md、docs/AI接手指南.md 和 docs/版本演进记录.md，
 再查看 package.json、src/bridge.ts、src/stores/app.ts、src-tauri/src/commands.rs、
 src-tauri/src/runtime.rs 和本次任务相关模块。

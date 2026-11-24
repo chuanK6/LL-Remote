@@ -3,6 +3,7 @@ import { useRouter } from 'vue-router'
 import { bridge, native } from '../bridge'
 import { useAppStore } from '../stores/app'
 import type { GeneralPreferences } from '../types'
+import { ROLE_SWITCH_DESCRIPTION } from '../role-switch'
 import PageHeading from '../components/PageHeading.vue'
 import SettingRow from '../components/SettingRow.vue'
 import ToggleSwitch from '../components/ToggleSwitch.vue'
@@ -45,6 +46,9 @@ function save(key: keyof GeneralPreferences, value: boolean) {
   </section>
   <section class="page-section">
     <h2>本机接受控制</h2>
+    <SettingRow label="自动切换角色" :detail="ROLE_SWITCH_DESCRIPTION">
+      <ToggleSwitch :model-value="app.snapshot.preferences.automaticRoleSwitch" label="自动切换角色" :disabled="!native || app.loading" @update:model-value="save('automaticRoleSwitch', $event)"/>
+    </SettingRow>
     <SettingRow label="始终接受控制" :detail="app.snapshot.preferences.alwaysAcceptControl ? (app.snapshot.preferences.acceptControl && app.snapshot.account.serverRunning ? '已保存 · 本机正在接受控制' : '已保存 · 本机接受控制当前未开启') : '启动 LL远程时，使用已保存的账号和连接密码开启接受控制。'">
       <ToggleSwitch :model-value="app.snapshot.preferences.alwaysAcceptControl" label="始终接受控制" :disabled="!native || app.loading" @update:model-value="save('alwaysAcceptControl', $event)"/>
     </SettingRow>

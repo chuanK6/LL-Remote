@@ -18,7 +18,7 @@ const dragging = ref(false)
 const applying = ref(false)
 const layingOut = ref(false)
 const disconnecting = ref(false)
-const performanceEnabled = ref(true)
+const performanceEnabled = ref(false)
 const savingPerformance = ref(false)
 const error = ref('')
 let polling: ReturnType<typeof setInterval> | undefined

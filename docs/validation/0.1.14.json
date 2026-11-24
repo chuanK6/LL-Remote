@@ -1,0 +1,223 @@
+{
+  "version": "0.1.14",
+  "date": "2026-11-24",
+  "timezone": "Asia/Shanghai",
+  "platform": "Windows x64",
+  "scope": "Previously compiled and packaged application accepted by user; release preparation updates documentation and clean distribution only, without rerunning application/unit/engine tests",
+  "changes": [
+    "Optional role switching only when active local acceptance IP matches target IP",
+    "Main-only modal when disabled: requested description, light-blue enable and light-red stop",
+    "Session-scoped pause retained across quality/audio/window reconnections",
+    "After actual cleanup, wait at least 3 seconds and confirm no logical session, reconnect, Moonlight child or native client connection before restoring",
+    "Manual stop/exit/account changes revoke restoration; failure retains state and retries",
+    "Performance card follows the raw Moonlight client rectangle and hides while minimized or unavailable",
+    "Rebase six LL-managed Sunshine absolute paths to the current Data directory before resolving account/certificate paths; external services unchanged",
+    "Create secondary webviews on the UI thread using the live main WebView2 environment; create and position controls before optional performance, preserve Tauri errors and restore Moonlight foreground",
+    "Performance monitoring defaults off; do not create its window until enabled; retain saved explicit preference",
+    "Fresh remote connections start windowed even when migrated/native settings remember fullscreen; internal reconnects preserve active-session mode",
+    "My Devices and All Devices show only current-account online directory members; saved devices/history/pairing remain available",
+    "Add Connection History below Start Assistance: time-descending list cards with borders, shadow, hover color, search and details/back navigation",
+    "Record cards and details omit host online/offline state; legacy saved profiles are displayed without writing new history; missing times are labeled unrecorded",
+    "Expose favorite star to the right of the device name; save immediately, turn yellow and show confirmation; remove editor favorite checkbox",
+    "Hide historical rows without current device profiles, including their count",
+    "Favorites and connection history share raised list cards, hover/focus delete buttons and separate details links",
+    "Delete device profile, favorites and all associated history directly without confirmation or tombstone; sanitize both primary/recovery data",
+    "Remove unreferenced owned saved access credentials and validated custom wallpaper; preserve shared resources and native pairing",
+    "Disconnect only a confirmed matching target tunnel and clear settings binding for removed devices"
+  ],
+  "automaticRoleSwitchDefault": false,
+  "restorationDelaySeconds": 3,
+  "restorationRetrySeconds": 8,
+  "restorationChecks": [
+    "Original logical session ID and pause record still match",
+    "Session stage is disconnected, canceled or failed",
+    "No settings change or reconnection in progress",
+    "Moonlight child exited; failed stops retain the handle",
+    "Fresh native snapshot confirms no client connection",
+    "Account authenticated and unchanged",
+    "No intervening manual acceptance stop or exit"
+  ],
+  "frontendBuild": {
+    "passed": true,
+    "command": "npm run build (vue-tsc and Vite)",
+    "embeddedAssetNames": [
+      "index-6TYgwGNJ.css",
+      "index-lPZieblW.js"
+    ]
+  },
+  "nativeReleaseBuild": {
+    "passed": true,
+    "command": "node scripts/tauri.mjs build --no-bundle --config src-tauri/tauri.release.conf.json",
+    "fileVersion": [
+      0,
+      1,
+      14,
+      0
+    ]
+  },
+  "portableResources": {
+    "checkedNativeBinaries": 138,
+    "bundledWebView2Binaries": 0,
+    "webview2Delivery": "system-evergreen",
+    "nestedQtPluginsChecked": true,
+    "pinnedComponentHashesMatch": true,
+    "resourceFilesCompared": 1597,
+    "nsisBundleMarkerAccepted": false,
+    "missingDependencies": 0,
+    "systemBaseline": "Current local Windows; clean Windows acceptance deferred"
+  },
+  "runtimeTestsExecuted": false,
+  "unitTestsExecuted": false,
+  "runtimeAcceptance": "User confirmed current testing had no issues on 2026-11-24 and authorized GitHub publication; per-scenario coverage was not supplied",
+  "historicalBaseline": "0.1.13 user confirmation and isolated wallpaper checks are historical, not 0.1.14 acceptance; frontend 31 passed/3 failed/7 unhandled errors was not rerun",
+  "delivery": {
+    "directory": "release/LLRemote-Portable-x64-0.1.14",
+    "archive": "LLRemote-Portable-x64-0.1.14.zip",
+    "sha256File": "LLRemote-Portable-x64-0.1.14.zip.sha256.txt",
+    "emptyArchiveData": true,
+    "localDirectoryHasPreservedUserData": true,
+    "cleanPackagingDirectory": ".work/history-delete-0.1.14/LLRemote-Portable-x64-0.1.14",
+    "executableSha256": "18590301eea36d50d7d4704f397a4e90c057d3eda6edbab235e6404519c0abe2",
+    "publicPackagingDirectory": ".work/github-release-0.1.14/LLRemote-Portable-x64-0.1.14",
+    "releaseNotesAttachment": "LLRemote-0.1.14-release-notes.md",
+    "sameExecutableAsUserAccepted": true
+  },
+  "originalCandidateOldVersionPreservation": {
+    "version": "0.1.13",
+    "filesCompared": 1623,
+    "allHashesUnchanged": true,
+    "includesOriginalZipAndConfiguration": true,
+    "dataNotLoadedOrModifiedByTask": true
+  },
+  "revision": "release-0.1.14",
+  "showPerformanceMonitorDefault": false,
+  "freshConnectionWindowMode": "windowed",
+  "internalReconnectWindowMode": "Current active session preference, including user-selected fullscreen",
+  "localPackageUpdate": {
+    "directory": "release/LLRemote-Portable-x64-0.1.14",
+    "programUpdated": true,
+    "protectedUserFiles": 379,
+    "userFilesAllHashesUnchanged": true,
+    "originalProgramsAndZipBackedUpLocally": true,
+    "backupDirectory": ".work/previous-local-0.1.14-505aa084-6cff-41c6-9176-6638368c72b6",
+    "resourceVerification": {
+      "checkedNativeBinaries": 138,
+      "bundledWebView2Binaries": 0,
+      "webview2Delivery": "system-evergreen",
+      "nestedQtPluginsChecked": true,
+      "pinnedComponentHashesMatch": true,
+      "resourceFilesCompared": 1597,
+      "nsisBundleMarkerAccepted": false,
+      "missingDependencies": 0,
+      "systemBaseline": "Current local Windows; clean Windows acceptance deferred"
+    }
+  },
+  "existingOldDirectoryPreserved": {
+    "directory": "release/LLRemote-Portable-x64-0.1.12",
+    "filesCompared": 0,
+    "allHashesUnchanged": true,
+    "filesDisappearedExternallyBeforeUpdate": 6,
+    "removedOrRecreatedByTask": false
+  },
+  "userReportedRegressions": {
+    "originalCandidate": "0.1.14 before portable-fix-1",
+    "reports": [
+      "Moving old Data to the new version and verifying Sunshine creates LLRemote-Portable-x64-0.1.12",
+      "Fullscreen remote connection has no float ball; user cannot operate the local desktop until disconnect"
+    ],
+    "evidence": {
+      "staleManagedPathCount": 6,
+      "staleVersion": "0.1.12",
+      "savedShowFloatBall": true,
+      "savedShowPerformanceMonitor": false,
+      "windowCreationFailures": "Two pairs of SystemFailed controls/performance warnings in local logs at 2026-11-24 11:52 and 11:53 UTC",
+      "underlyingWindowFailureCause": "Original logs discarded the Tauri error; not confirmed by runtime testing"
+    },
+    "revisedRuntimeResult": "Pending user acceptance; no application, engine or unit tests executed"
+  },
+  "connectionHistoryUi": {
+    "onlineSource": "Fresh authenticated Jiaoyuelian pclist rows, independent of saved source and networkConnected",
+    "accountOnlineMarker": "Reset on refresh/failure and not loaded from persisted Data",
+    "savedDeviceProfilesPreserved": true,
+    "historyStorage": "Existing account history; no history is created merely by opening the UI or disconnecting",
+    "legacySavedConnections": "Display saved code/imported profiles or lastConnectedAt when that device has no detailed history; missing times are labeled unrecorded and sorted last",
+    "sort": "Parsed connection time descending",
+    "listLayout": "Single-column raised cards with border, shadow and blue hover/focus highlight",
+    "hostStatusShownInRecords": false,
+    "detailRoutes": [
+      "/history/record/:id",
+      "/history/device/:id",
+      "/favorites/device/:id"
+    ],
+    "legacyRoute": "/history/:deviceId redirects to /history?device=:deviceId",
+    "backNavigation": "Return to list preserving search and device filter",
+    "favorite": "Device-name star saves through existing edit_device, yellow when enabled, confirmation toast; editor checkbox removed",
+    "removedDeviceProfile": "Hidden from list and count; stale direct links can return to list",
+    "runtimeTestsExecuted": false,
+    "favoriteList": "Uses the same SavedDeviceList cards, time order and hover/focus delete button as history; favorite details return to favorites"
+  },
+  "hardDelete": {
+    "confirmation": false,
+    "softDelete": false,
+    "scope": "Target device profile, its favorite flag and every history entry with matching deviceId",
+    "recoveryData": "Write sanitized devices.bak then devices.json atomically without retaining deleted records",
+    "accessCredentials": "Delete unreferenced account-owned identity credential and its backup; preserve references shared by other accounts/devices",
+    "wallpaper": "Delete only the validated unreferenced custom bitmap; preserve default, original source and shared images",
+    "nativePairingsAndLogs": "Not reset or bulk-deleted",
+    "connectionHandling": "Main-window command, session gate and administrative lock; disconnect only a cached connection confirmed to match the target",
+    "settingsBinding": "Removed device invalidates pending settings target without breaking subsequent snapshots",
+    "errors": "Report deletion/cleanup failure and refresh actual persisted list, never show false success",
+    "existingDataModifiedByBuildTask": false,
+    "runtimeTestsExecuted": false
+  },
+  "userAcceptance": {
+    "confirmed": true,
+    "date": "2026-11-24",
+    "source": "User message in this workspace",
+    "quote": "目前测试没有问题",
+    "coverage": "General current-version feedback; no machine/environment/scenario matrix supplied",
+    "acceptedExecutableSha256": "18590301eea36d50d7d4704f397a4e90c057d3eda6edbab235e6404519c0abe2"
+  },
+  "runtimeTestsExecutedByAgent": false,
+  "unitTestsExecutedByAgent": false,
+  "recommendedAdditionalChecks": [
+    "Disabled-option collision: approve/stop/Escape and saved preference",
+    "Enabled-option collision, including target lookup after first tunnel",
+    "Different target IP leaves local acceptance unchanged",
+    "Bitrate/FPS/resolution/audio/window changes keep acceptance paused during internal reconnection",
+    "Normal disconnect and Moonlight exit restore only after delayed checks",
+    "Connection/pairing/reconnection failures, cancellations and unconfirmed stops",
+    "Manual stop/exit/account changes prevent late restore; recovery failure feedback/retry",
+    "Performance card move/resize/minimize, fullscreen/borderless and mixed-DPI monitors",
+    "Move old Data, verify Sunshine account and confirm no old-version directory is created; account and pairing remain available",
+    "New connection starts windowed even with old fullscreen preferences; float ball displays, opens, drags and collapses",
+    "Performance monitor is off by default; enabling/disabling follows Moonlight client rectangle without removing controls",
+    "Manually select fullscreen then change quality: reconnect keeps fullscreen, float ball and role pause",
+    "Only same-account online directory hosts appear under My Devices and All Devices; offline/foreign/code-only histories remain accessible in records/favorites",
+    "An account host previously reached by code remains visible when online; stale duplicate records do not appear as online directory members",
+    "Old/new connection records, time order, search, hover/focus highlight, more records and detail/back navigation",
+    "Records and their details show no online/offline host badges; desktop/settings/quick apps target the correct record device",
+    "Favorite star saves, becomes yellow, confirms, survives restart and can be canceled without changing wallpaper/note",
+    "Orphan and missing-device history entries do not appear or count in the connection history list",
+    "History and favorites render matching cards with hover/focus deletion; clicking delete neither opens details nor asks for confirmation",
+    "Delete from either list removes the profile, favorite and all its historical entries; restart and recovery backup do not restore deleted data",
+    "Deleting an online account host may rediscover a fresh online directory row, without restoring old history/favorite; no tombstone blocks legitimate rediscovery",
+    "Owned access credential and custom wallpaper cleanup, default/source preservation, cross-device/account sharing and failure feedback",
+    "Favorite details return to favorite search; deleting a device previously used for advanced settings does not break refresh"
+  ],
+  "additionalChecksCoverage": "These were previously proposed checks. User general acceptance does not establish that each one was individually executed.",
+  "publication": {
+    "channel": "GitHub Releases",
+    "releaseUrl": "https://github.com/chuanK6/LL-Remote/releases/tag/v0.1.14",
+    "releaseNotes": "docs/releases/0.1.14.md",
+    "status": "Package preparation snapshot; publication receipt will be recorded in the repository after upload"
+  },
+  "upgradeGuidance": {
+    "audience": "Downloading users",
+    "saveWholeOldDataBeforeUpgrade": true,
+    "steps": "Completely exit the old tray application, preserve/copy its entire Data directory, extract the new package and place old Data beside its EXE before launching",
+    "sameComputerAndWindowsUser": "Existing configuration, saved access and pairing can be reused without reconfiguration",
+    "differentComputerOrWindowsUser": "DPAPI-protected credentials require reauthentication",
+    "personalDataPublished": false
+  }
+}

@@ -16,7 +16,7 @@ use serde_json::json;
 use std::{
     path::PathBuf,
     sync::{
-        atomic::{AtomicBool, Ordering},
+        atomic::{AtomicBool, AtomicU64, Ordering},
         Arc, Mutex as StdMutex,
     },
     time::{Duration, SystemTime},
@@ -87,6 +87,18 @@ fn host_candidates(
 }
 use zeroize::Zeroizing;
 
+mod role_switch;
+
+#[derive(Clone)]
+struct RoleResume {
+    session_id: String,
+    username: Option<String>,
+    connection_password: Zeroizing<String>,
+    web_password: Zeroizing<String>,
+    previous_auto_pause: bool,
+    intent_epoch: u64,
+}
+
 pub struct SessionData {
     pub snapshot: SessionSnapshot,
     pub cancel: CancellationToken,
@@ -96,6 +108,9 @@ pub struct SessionData {
     pub pipe_name: String,
     pub token: Zeroizing<String>,
     pub changing: bool,
+    role_resume: Option<RoleResume>,
+    role_conflict_address: Option<String>,
+    role_switch_prompt: Option<tokio::sync::oneshot::Sender<bool>>,
 }
 pub struct Runtime {
     pub app: AppHandle,
@@ -121,6 +136,8 @@ pub struct Runtime {
     pub autostart_warning: StdMutex<Option<String>>,
     startup_network_warning: StdMutex<Option<String>>,
     pause_automatic_acceptance: AtomicBool,
+    role_switch_warning: StdMutex<Option<String>>,
+    acceptance_intent_epoch: AtomicU64,
     pub moonlight_settings_target: StdMutex<Option<(String, Option<String>)>>,
     pending_pairing_ids: StdMutex<Vec<String>>,
 }
@@ -228,6 +245,9 @@ impl Runtime {
                 pipe_name: String::new(),
                 token: Zeroizing::new(String::new()),
                 changing: false,
+                role_resume: None,
+                role_conflict_address: None,
+                role_switch_prompt: None,
             }),
             gate: Arc::new(Semaphore::new(1)),
             portable,
@@ -242,6 +262,8 @@ impl Runtime {
             autostart_warning: StdMutex::new(autostart_warning),
             startup_network_warning: StdMutex::new(None),
             pause_automatic_acceptance: AtomicBool::new(false),
+            role_switch_warning: StdMutex::new(None),
+            acceptance_intent_epoch: AtomicU64::new(0),
             moonlight_settings_target: StdMutex::new(None),
             pending_pairing_ids: StdMutex::new(vec![]),
         }))
@@ -455,7 +477,12 @@ impl Runtime {
     }
 
     pub async fn stop_accepting(&self) -> Result<AppSnapshot> {
+        // Revoke the pending restore immediately, even if another admin
+        // operation must finish before the native stop can acquire its lock.
+        self.pause_automatic_acceptance(true);
+        self.cancel_role_restore().await;
         let _guard = self.administrative_lock.lock().await;
+        self.cancel_role_restore().await;
         self.pause_automatic_acceptance(true);
         let account = self.nat.cached_account().await;
         let accepting = self.store()?.preferences.accept_control;
@@ -631,6 +658,9 @@ impl Runtime {
         ];
         let store = self.store()?;
         let mut devices = store.account_data.devices.clone();
+        for device in &mut devices {
+            device.account_online &= account.authenticated;
+        }
         if let Some(network) = network {
             let connected_id = devices
                 .iter()
@@ -676,16 +706,30 @@ impl Runtime {
             session,
             components,
             power_status,
-            storage_warning: store.warning.clone().or_else(|| {
-                self.autostart_warning.lock().ok().and_then(|value| value.clone())
-            }).or_else(|| {
-                self.startup_network_warning.lock().ok().and_then(|value| value.clone())
-            }).or_else(|| {
-                self.acceptance_firewall_warning
-                    .lock()
-                    .ok()
-                    .and_then(|value| value.clone())
-            }),
+            storage_warning: self
+                .role_switch_warning
+                .lock()
+                .ok()
+                .and_then(|warning| warning.clone())
+                .or_else(|| store.warning.clone())
+                .or_else(|| {
+                    self.autostart_warning
+                        .lock()
+                        .ok()
+                        .and_then(|value| value.clone())
+                })
+                .or_else(|| {
+                    self.startup_network_warning
+                        .lock()
+                        .ok()
+                        .and_then(|value| value.clone())
+                })
+                .or_else(|| {
+                    self.acceptance_firewall_warning
+                        .lock()
+                        .ok()
+                        .and_then(|value| value.clone())
+                }),
         })
     }
     pub async fn refresh(&self) -> Result<AppSnapshot> {
@@ -727,6 +771,7 @@ impl Runtime {
                         store.save_preferences()?;
                     }
                     for device in &mut store.account_data.devices {
+                        device.account_online = false;
                         if device.source == "account" {
                             device.status = "offline".into();
                             device.service_ready = None;
@@ -748,13 +793,30 @@ impl Runtime {
                             preferences: store.preferences.stream.clone(),
                             ..Device::default()
                         };
-                        store.merge_device(device);
+                        let id = store.merge_device(device);
+                        if let Some(device) = store
+                            .account_data
+                            .devices
+                            .iter_mut()
+                            .find(|device| device.id == id)
+                        {
+                            // Directory membership is independent of saved connection
+                            // source: the same account host may also have a peer code.
+                            device.account_online = true;
+                        }
                     }
                     store.save_devices()?;
+                } else {
+                    for device in &mut store.account_data.devices {
+                        device.account_online = false;
+                    }
                 }
             }
             Err(error) => {
                 tracing::debug!(code = ?error.code, "Native refresh unavailable");
+                for device in &mut self.store()?.account_data.devices {
+                    device.account_online = false;
+                }
             }
         }
         let snapshot = self.snapshot().await?;
@@ -782,7 +844,7 @@ impl Runtime {
         Ok(())
     }
     fn reconcile_moonlight_settings(&self) -> Result<()> {
-        let target = self
+        let mut target = self
             .moonlight_settings_target
             .lock()
             .map_err(|_| AppError::new(ErrorCode::SystemFailed, "Moonlight 设置同步不可用。"))?;
@@ -794,7 +856,11 @@ impl Runtime {
             return Ok(());
         }
         let previous = if let Some(id) = device_id {
-            store.device(id)?.preferences
+            let Some(device) = store.account_data.devices.iter().find(|device| &device.id == id) else {
+                *target = None;
+                return Ok(());
+            };
+            device.preferences.clone()
         } else {
             store.preferences.stream.clone()
         };
@@ -859,8 +925,17 @@ impl Runtime {
                     "识别码须为 4–32 位数字。",
                 ));
             }
-            let address = request.address.as_deref().map(str::trim).filter(|value| !value.is_empty())
-                .ok_or_else(|| AppError::new(ErrorCode::AddressRequired, "识别码连接需要填写对方的组网地址。"))?;
+            let address = request
+                .address
+                .as_deref()
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .ok_or_else(|| {
+                    AppError::new(
+                        ErrorCode::AddressRequired,
+                        "识别码连接需要填写对方的组网地址。",
+                    )
+                })?;
             validate_address(address)?;
         }
         let permit =
@@ -872,10 +947,19 @@ impl Runtime {
             .as_deref()
             .map(|id| self.store()?.device(id))
             .transpose()?;
-        if request.peer_code.is_none() && device.as_ref().is_some_and(|device| {
-            device.peer_code.is_some() && device.address.as_deref().is_none_or(|address| address.trim().is_empty())
-        }) {
-            return Err(AppError::new(ErrorCode::AddressRequired, "请在协助页面填写此设备的组网地址。"));
+        if request.peer_code.is_none()
+            && device.as_ref().is_some_and(|device| {
+                device.peer_code.is_some()
+                    && device
+                        .address
+                        .as_deref()
+                        .is_none_or(|address| address.trim().is_empty())
+            })
+        {
+            return Err(AppError::new(
+                ErrorCode::AddressRequired,
+                "请在协助页面填写此设备的组网地址。",
+            ));
         }
         let snapshot = {
             let mut session = self.session.lock().await;
@@ -885,11 +969,19 @@ impl Runtime {
             if ["disconnecting", "disconnectFailed"].contains(&session.snapshot.stage.as_str()) {
                 return Err(AppError::new(ErrorCode::Busy, "请先结束上一次连接。"));
             }
+            if session.role_resume.is_some() {
+                return Err(AppError::new(
+                    ErrorCode::Busy,
+                    "正在延迟检查并恢复本机接受控制，请稍候；也可从托盘停止本机接受控制。",
+                ));
+            }
             let id = uuid::Uuid::new_v4().to_string();
             session.cancel = CancellationToken::new();
             session.address = None;
             session.child = None;
             session.changing = false;
+            session.role_conflict_address = None;
+            session.role_switch_prompt = None;
             session.pipe_name = format!("LLRemote-{id}");
             session.token = Zeroizing::new(format!(
                 "{}{}",
@@ -960,6 +1052,15 @@ impl Runtime {
                     let _ = runtime.app.emit_to("main", "ll:snapshot", snapshot);
                 }
             }
+            if !runtime.session.lock().await.cancel.is_cancelled() {
+                match runtime.finish_role_session().await {
+                    Ok(()) => runtime.schedule_role_restore().await,
+                    Err(error) => runtime.stage("disconnectFailed", Some(error)).await,
+                }
+            }
+            if let Ok(snapshot) = runtime.snapshot().await {
+                let _ = runtime.app.emit_to("main", "ll:snapshot", snapshot);
+            }
         });
         Ok(snapshot)
     }
@@ -969,6 +1070,29 @@ impl Runtime {
         _initial_device: Option<Device>,
     ) -> Result<()> {
         let cancel = self.session.lock().await.cancel.clone();
+        // Address discovery can reveal a collision only after the first tunnel
+        // is established. Retry that tunnel once within the same logical session.
+        for attempt in 0..2 {
+            self.prepare_role_for_connection(request, &cancel).await?;
+            let result = self.connect_attempt(request).await;
+            if attempt == 0
+                && result
+                    .as_ref()
+                    .is_err_and(|error| error.code == ErrorCode::RoleSwitchRequired)
+            {
+                let _guard = self.administrative_lock.lock().await;
+                self.nat.end_session_connection(None).await?;
+                continue;
+            }
+            return result;
+        }
+        unreachable!("the second connection attempt always returns")
+    }
+    async fn connect_attempt(self: &Arc<Self>, request: &ConnectRequest) -> Result<()> {
+        let cancel = self.session.lock().await.cancel.clone();
+        if cancel.is_cancelled() {
+            return Err(AppError::new(ErrorCode::Canceled, "连接已取消。"));
+        }
         let network_guard = self.administrative_lock.lock().await;
         let network_started = SystemTime::now();
         let account = self.restore_jiaoyue(&cancel).await?;
@@ -981,7 +1105,7 @@ impl Runtime {
             .as_deref()
             .map(|id| self.store()?.device(id))
             .transpose()?;
-        let preferences = device
+        let mut preferences = device
             .as_ref()
             .map(|d| d.preferences.clone())
             .unwrap_or_else(|| {
@@ -989,6 +1113,11 @@ impl Runtime {
                     .map(|s| s.preferences.stream.clone())
                     .unwrap_or_default()
             });
+        // Fresh connections open in a window even when migrated/native settings
+        // remember fullscreen. Internal reconnects use the active session's
+        // preferences, so switching fullscreen during a session still persists
+        // through quality changes.
+        preferences.window_mode = "windowed".into();
         let code = request
             .peer_code
             .as_deref()
@@ -1287,13 +1416,19 @@ impl Runtime {
             session.snapshot.started_at = Some(now());
         }
         self.stage("streaming", None).await;
-        if let Err(error) = controls::show_performance(self).await {
-            tracing::warn!(code = ?error.code, "Session performance window unavailable");
+        if let Some(owner) = self.app.get_webview_window("main") {
+            if let Err(error) = controls::show_remote_window(self, &owner).await {
+                tracing::warn!(code = ?error.code, "Could not activate the stream window");
+            }
         }
-        if self.store()?.preferences.show_float_ball {
+        let show_ball = self.store()?.preferences.show_float_ball;
+        if show_ball {
             if let Err(error) = controls::show(self).await {
                 tracing::warn!(code = ?error.code, "Session controls unavailable");
             }
+        }
+        if let Err(error) = controls::show_performance(self).await {
+            tracing::warn!(code = ?error.code, "Session performance window unavailable");
         }
         if let Ok(snapshot) = self.snapshot().await {
             let _ = self.app.emit_to("main", "ll:snapshot", snapshot);
@@ -1380,12 +1515,28 @@ impl Runtime {
         let code_connection = request.peer_code.is_some() || device.is_some_and(|device| device.peer_code.is_some());
         let saved_address = device.and_then(|device| device.address.as_deref());
         let explicit = if code_connection {
-            Some(request.address.as_deref().or(saved_address)
-                .filter(|value| !value.trim().is_empty())
-                .ok_or_else(|| AppError::new(ErrorCode::AddressRequired, "识别码连接需要填写对方的组网地址。"))?)
+            Some(
+                request
+                    .address
+                    .as_deref()
+                    .or(saved_address)
+                    .filter(|value| !value.trim().is_empty())
+                    .ok_or_else(|| {
+                        AppError::new(
+                            ErrorCode::AddressRequired,
+                            "识别码连接需要填写对方的组网地址。",
+                        )
+                    })?,
+            )
         } else {
             request.address.as_deref()
         };
+        self.check_role_conflict(
+            explicit
+                .or_else(|| reported.first().map(String::as_str))
+                .or(saved_address),
+        )
+        .await?;
         let explicit_addresses = host_candidates(explicit, &[], None, &[], &local_addresses)?;
         let mut discovered = vec![];
         let mut last = None;
@@ -1435,10 +1586,22 @@ impl Runtime {
                     }
                 }
             }
+            self.check_role_conflict(
+                explicit
+                    .or_else(|| reported.first().map(String::as_str))
+                    .or(saved_address),
+            )
+            .await?;
             let mut addresses = if code_connection {
                 explicit_addresses.clone()
             } else {
-                host_candidates(explicit, &reported, saved_address, &discovered, &local_addresses)?
+                host_candidates(
+                    explicit,
+                    &reported,
+                    saved_address,
+                    &discovered,
+                    &local_addresses,
+                )?
             };
             if (addresses.is_empty() || last.is_some() || https_error.is_some()) && route_attempts < 2 {
                 if let Some(local_address) = account_connection.and_then(|n| n.local_address.as_deref()) {
@@ -1471,7 +1634,9 @@ impl Runtime {
                     Ok(Ok(info)) => {
                         match tokio::time::timeout_at(deadline, info.check_https_port(cancel)).await {
                             Ok(Ok(())) => return Ok(info),
-                            Ok(Err(error)) if error.code == ErrorCode::Canceled => return Err(error),
+                            Ok(Err(error)) if error.code == ErrorCode::Canceled => {
+                                return Err(error)
+                            }
                             Ok(Err(error)) => https_error = Some(error),
                             Err(_) => break,
                         }
@@ -1496,7 +1661,10 @@ impl Runtime {
             return Err(error);
         }
         if !found_address {
-            Err(AppError::new(ErrorCode::AddressRequired, "组网已建立，但当前内核未返回对方地址。请填写对方 Sunshine 的组网地址后重试。"))
+            Err(AppError::new(
+                ErrorCode::AddressRequired,
+                "组网已建立，但当前内核未返回对方地址。请填写对方 Sunshine 的组网地址后重试。",
+            ))
         } else {
             Err(last.unwrap_or_else(|| {
                 AppError::new(ErrorCode::SunshineUnavailable, "对方 Sunshine 不可达。")
@@ -1615,18 +1783,26 @@ impl Runtime {
                     return;
                 }
             }
-            let _ = child.kill().await;
-            let _ = child.wait().await;
+            if matches!(
+                tokio::time::timeout(Duration::from_secs(5), child.kill()).await,
+                Ok(Ok(()))
+            ) || matches!(child.try_wait(), Ok(Some(_)))
+            {
+                return;
+            }
+            // A failed stop must keep the owned process handle observable.
+            // Otherwise the role-restoration check could mistake it for an exit.
+            self.session.lock().await.child = Some(child);
         }
     }
-    pub async fn cancel(&self) -> Result<SessionSnapshot> {
+    pub async fn cancel(self: &Arc<Self>) -> Result<SessionSnapshot> {
         let id = self.session.lock().await.snapshot.id.clone();
         if let Some(id) = id {
             return self.end_session(&id, "canceled").await;
         }
         Ok(self.session.lock().await.snapshot.clone())
     }
-    pub async fn disconnect(&self, id: &str) -> Result<SessionSnapshot> {
+    pub async fn disconnect(self: &Arc<Self>, id: &str) -> Result<SessionSnapshot> {
         self.end_session(id, "disconnected").await
     }
     fn record_first_connection(store: &mut Store) {
@@ -1678,7 +1854,7 @@ impl Runtime {
         }
         self.sunshine.disconnect_incoming_control(&self.vault).await
     }
-    pub async fn disconnect_from_tray(&self) -> Result<()> {
+    pub async fn disconnect_from_tray(self: &Arc<Self>) -> Result<()> {
         let active = {
             let session = self.session.lock().await;
             (!["idle", "disconnected", "canceled", "failed"].contains(&session.snapshot.stage.as_str()))
@@ -1701,7 +1877,7 @@ impl Runtime {
         let _ = self.app.emit_to("main", "ll:snapshot", snapshot);
         Ok(())
     }
-    async fn end_session(&self, id: &str, final_stage: &str) -> Result<SessionSnapshot> {
+    async fn end_session(self: &Arc<Self>, id: &str, final_stage: &str) -> Result<SessionSnapshot> {
         {
             let mut session = self.session.lock().await;
             if session.snapshot.id.as_deref() != Some(id) {
@@ -1729,6 +1905,14 @@ impl Runtime {
         };
         let _session_update = self.session_update.lock().await;
         let _guard = self.administrative_lock.lock().await;
+        if self.session.lock().await.child.is_some() {
+            let error = AppError::new(
+                ErrorCode::Timeout,
+                "Moonlight 尚未确认退出，本机接受控制将继续保持暂停。请重试断开。",
+            );
+            self.stage("disconnectFailed", Some(error.clone())).await;
+            return Err(error);
+        }
         let device_id = {
             let session = self.session.lock().await;
             if session.snapshot.id.as_deref() != Some(id) {
@@ -1742,12 +1926,13 @@ impl Runtime {
             return Err(error);
         }
         self.stage(final_stage, None).await;
+        self.schedule_role_restore().await;
         if let Ok(snapshot) = self.snapshot().await {
             let _ = self.app.emit_to("main", "ll:snapshot", snapshot);
         }
         Ok(self.session.lock().await.snapshot.clone())
     }
-    pub async fn disconnect_device(&self, device_id: &str) -> Result<AppSnapshot> {
+    pub async fn disconnect_device(self: &Arc<Self>, device_id: &str) -> Result<AppSnapshot> {
         let device = self.store()?.device(device_id)?;
         let session_id = {
             let session = self.session.lock().await;
@@ -1848,6 +2033,12 @@ impl Runtime {
             if restart {
                 self.stage("reconnecting", None).await;
                 self.kill_stream().await;
+                if self.session.lock().await.child.is_some() {
+                    return Err(AppError::new(
+                        ErrorCode::Timeout,
+                        "上一次 Moonlight 串流尚未退出，已停止重连。",
+                    ));
+                }
                 let expected = device_id
                     .as_deref()
                     .and_then(|id| self.store().ok().and_then(|store| store.device(id).ok()))
@@ -1858,9 +2049,14 @@ impl Runtime {
                     if cancel.is_cancelled() {
                         return Err(AppError::new(ErrorCode::Canceled, "连接已取消。"));
                     }
-                    let process =
-                        self.moonlight
-                            .spawn_stream(&address, Some(&host.uuid), &app, &preferences, &pipe, &token)?;
+                    let process = self.moonlight.spawn_stream(
+                        &address,
+                        Some(&host.uuid),
+                        &app,
+                        &preferences,
+                        &pipe,
+                        &token,
+                    )?;
                     session.child = Some(process.child);
                     session.verified = process.verified;
                 }
@@ -1898,6 +2094,13 @@ impl Runtime {
             return Err(error);
         }
         self.stage("streaming", None).await;
+        if restart {
+            if let Some(owner) = self.app.get_webview_window("main") {
+                if let Err(error) = controls::show_remote_window(self, &owner).await {
+                    tracing::warn!(code = ?error.code, "Could not activate the reconnected stream window");
+                }
+            }
+        }
         Ok(self.session.lock().await.snapshot.clone())
     }
     pub async fn diagnostics(&self, device_id: Option<&str>) -> Result<Vec<Diagnostic>> {
@@ -2041,8 +2244,13 @@ impl Runtime {
         let account = match self.nat.snapshot().await {
             Ok((account, _)) => account,
             Err(error) if error.code == ErrorCode::LocalAuthorizationRequired => {
-                let secret = self.vault.get(&Vault::reference("local", "jiaoyue-local-access"))
-                    .or_else(|_| self.vault.get(&Vault::reference("local", "jiaoyue-web-password")))
+                let secret = self
+                    .vault
+                    .get(&Vault::reference("local", "jiaoyue-local-access"))
+                    .or_else(|_| {
+                        self.vault
+                            .get(&Vault::reference("local", "jiaoyue-web-password"))
+                    })
                     .map_err(|_| error)?;
                 self.nat.authorize(&secret.password).await?;
                 self.nat.snapshot().await?.0
@@ -2061,7 +2269,11 @@ impl Runtime {
             None => None,
         };
         match secret {
-            Some(secret) => self.nat.login(&secret.username, &secret.password, cancel).await,
+            Some(secret) => {
+                self.nat
+                    .login(&secret.username, &secret.password, cancel)
+                    .await
+            }
             None => Ok(account),
         }
     }
@@ -2075,9 +2287,15 @@ impl Runtime {
         };
         let (desired, active) = {
             let store = self.store()?;
-            (store.preferences.always_accept_control, store.preferences.accept_control)
+            (
+                store.preferences.always_accept_control,
+                store.preferences.accept_control,
+            )
         };
-        if !desired || self.pause_automatic_acceptance.load(Ordering::SeqCst) {
+        if !desired
+            || self.pause_automatic_acceptance.load(Ordering::SeqCst)
+            || self.session.lock().await.role_resume.is_some()
+        {
             return Ok(());
         }
         if !account.authenticated {
@@ -2169,6 +2387,7 @@ impl Runtime {
             return;
         }
         self.session.lock().await.cancel.cancel();
+        self.cancel_role_restore().await;
         self.kill_stream().await;
         controls::close(&self.app);
         if self.session.lock().await.snapshot.id.is_some() {

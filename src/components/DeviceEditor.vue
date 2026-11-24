@@ -14,7 +14,6 @@ const app = useAppStore()
 const dialog = ref<HTMLElement>()
 const nameInput = ref<HTMLInputElement>()
 const name = ref(deviceName(props.device))
-const favorite = ref(props.device.favorite)
 const note = ref(props.device.note)
 const wallpaperPath = ref<string | null>(null)
 const resetWallpaper = ref(false)
@@ -68,7 +67,7 @@ async function save() {
   if (!name.value.trim() || Array.from(name.value.trim()).length > 64) { error.value = '设备名称须为 1–64 个字符。'; return }
   loading.value = true; error.value = ''
   try {
-    app.apply(await bridge.editDevice({ deviceId: props.device.id, displayName: name.value.trim(), favorite: favorite.value, note: note.value, wallpaperPath: wallpaperPath.value, resetWallpaper: resetWallpaper.value }))
+    app.apply(await bridge.editDevice({ deviceId: props.device.id, displayName: name.value.trim(), favorite: props.device.favorite, note: note.value, wallpaperPath: wallpaperPath.value, resetWallpaper: resetWallpaper.value }))
     emit('close'); app.tell('设备设置已保存。')
   } catch (caught) { error.value = normalizeError(caught).message } finally { loading.value = false }
 }
@@ -80,7 +79,6 @@ onBeforeUnmount(() => { imageRequest++; document.querySelector('.shell')?.remove
     <form @submit.prevent="save">
       <label class="form-label" for="editorName">设备名称</label>
       <input id="editorName" ref="nameInput" v-model="name" class="text-input" maxlength="64" required autocomplete="off"/>
-      <div class="editor-favorite-row"><label for="editorFavorite">收藏设备</label><input id="editorFavorite" v-model="favorite" type="checkbox"/></div>
       <label class="form-label" for="editorNote">备注</label>
       <input id="editorNote" v-model="note" class="text-input" maxlength="256" placeholder="仅保存在本机"/>
       <div class="editor-wallpaper-heading">设备壁纸（PNG、JPEG、WebP，不超过 5 MB）</div>

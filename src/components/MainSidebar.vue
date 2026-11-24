@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ChevronUp, Monitor, PanelsTopLeft, ScanLine, Settings, Star, Trash2 } from 'lucide-vue-next'
+import { ChevronUp, History, Monitor, PanelsTopLeft, ScanLine, Settings, Star, Trash2 } from 'lucide-vue-next'
 import { bridge } from '../bridge'
 import logo from '../../src-tauri/icons/128x128.png'
-import { deviceName, statusLabel } from '../domain'
+import { deviceName } from '../domain'
 import { useAppStore } from '../stores/app'
 import type { Device } from '../types'
 
@@ -13,7 +13,7 @@ const app = useAppStore()
 const route = useRoute()
 const router = useRouter()
 const open = reactive({ devices: true, assistance: true, apps: true })
-const devices = computed(() => [...app.snapshot.devices].sort((a, b) => Number(b.favorite) - Number(a.favorite)))
+const devices = computed(() => [...app.onlineAccountDevices].sort((a, b) => Number(b.favorite) - Number(a.favorite)))
 const deleteDialog = ref<HTMLDialogElement>()
 const deleting = ref<Device>()
 const apps = [
@@ -50,9 +50,9 @@ async function confirmDelete() {
       <div class="device-navigation">
         <div v-for="device in devices" :key="device.id" class="device-nav-row">
           <button
-          :class="['device-button', { selected: route.name === 'device' && route.params.id === device.id, online: device.networkConnected || device.status === 'online' }]"
+          :class="['device-button', { selected: route.name === 'device' && route.params.id === device.id, online: device.accountOnline }]"
           :aria-current="route.name === 'device' && route.params.id === device.id ? 'page' : undefined"
-          :title="deviceName(device) + ' · ' + statusLabel(device.networkConnected ? 'online' : device.status)"
+          :title="deviceName(device) + ' · 同账号在线设备'"
           @click="router.push(`/device/${device.id}`)">
           <span class="status-dot" aria-hidden="true" />
           <span class="device-icon" aria-hidden="true"><i/><i/><i/><i/></span>
@@ -64,7 +64,7 @@ async function confirmDelete() {
             <Trash2 :size="15" aria-hidden="true" />
           </button>
         </div>
-        <p v-if="!devices.length" class="nav-empty">连接后，设备会出现在这里</p>
+        <p v-if="!devices.length" class="nav-empty">{{ app.snapshot.account.authenticated ? '暂无同账号在线设备' : '登录后查看同账号在线设备' }}</p>
       </div>
       <button :class="['nav-button', { selected: route.name === 'devices' }]" @click="router.push('/devices')">
         <span class="nav-symbol all-symbol" aria-hidden="true"><i/><i/><i/><i/></span>全部设备
@@ -75,7 +75,8 @@ async function confirmDelete() {
     </button>
     <div v-show="open.assistance" id="nav-assistance">
       <button :class="['nav-button', { selected: route.name === 'assist' }]" @click="router.push('/assist')"><span class="nav-symbol"><Monitor class="icon"/></span>开始协助</button>
-      <button :class="['nav-button', { selected: route.name === 'favorites' }]" @click="router.push('/favorites')"><span class="nav-symbol"><Star class="icon filled"/></span>收藏设备</button>
+      <button :class="['nav-button', { selected: route.name === 'history' || route.name === 'history-device' || route.name === 'saved-history-device' }]" @click="router.push('/history')"><span class="nav-symbol"><History class="icon"/></span>连接记录</button>
+      <button :class="['nav-button', { selected: route.name === 'favorites' || route.name === 'favorite-device' }]" @click="router.push('/favorites')"><span class="nav-symbol"><Star class="icon filled"/></span>收藏设备</button>
     </div>
     <button class="section-title app-section section-toggle" :aria-expanded="open.apps" aria-controls="nav-apps" @click="open.apps = !open.apps">
       应用功能<ChevronUp class="chevron-icon" />

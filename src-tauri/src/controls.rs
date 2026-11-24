@@ -4,7 +4,7 @@ use crate::{
 };
 use serde_json::json;
 use std::{sync::Arc, time::Duration};
-use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
+use tauri::{AppHandle, Manager, WebviewWindow, WebviewWindowBuilder};
 
 const BALL_DIAMETER: f64 = 28.0;
 
@@ -19,7 +19,7 @@ struct Rect {
 #[derive(Clone, Copy)]
 struct Area {
     bounds: Rect,
-    work: Rect,
+    client: Rect,
     scale: f64,
 }
 
@@ -175,7 +175,9 @@ fn stream_area(pid: u32, overlay: &WebviewWindow, foreground_only: bool) -> Opti
         },
         UI::{
             HiDpi::GetDpiForWindow,
-            WindowsAndMessaging::{GetClientRect, GetForegroundWindow, IsIconic},
+            WindowsAndMessaging::{
+                GetClientRect, GetForegroundWindow, GetWindowThreadProcessId, IsIconic,
+            },
         },
     };
     let window = stream_window(pid)?;
@@ -184,9 +186,9 @@ fn stream_area(pid: u32, overlay: &WebviewWindow, foreground_only: bool) -> Opti
             return None;
         }
         let foreground = GetForegroundWindow();
-        if foreground_only
-            && foreground != window
-            && foreground != overlay.hwnd().ok()?.0 as HWND
+        let mut foreground_pid = 0;
+        GetWindowThreadProcessId(foreground, &mut foreground_pid);
+        if foreground_only && foreground_pid != pid && foreground != overlay.hwnd().ok()?.0 as HWND
         {
             return None;
         }
@@ -207,17 +209,17 @@ fn stream_area(pid: u32, overlay: &WebviewWindow, foreground_only: bool) -> Opti
         let width = (origin.x + client.right).min(info.rcMonitor.right) - left;
         let height = (origin.y + client.bottom).min(info.rcMonitor.bottom) - top;
         (width > 0 && height > 0).then_some(Area {
+            client: Rect {
+                left: origin.x,
+                top: origin.y,
+                width: client.right - client.left,
+                height: client.bottom - client.top,
+            },
             bounds: Rect {
                 left,
                 top,
                 width,
                 height,
-            },
-            work: Rect {
-                left: info.rcWork.left,
-                top: info.rcWork.top,
-                width: info.rcWork.right - info.rcWork.left,
-                height: info.rcWork.bottom - info.rcWork.top,
             },
             scale: f64::from(GetDpiForWindow(window).max(96)) / 96.0,
         })
@@ -233,7 +235,10 @@ pub async fn show_remote_window(runtime: &Runtime, owner: &WebviewWindow) -> Res
     let pid = {
         let session = runtime.session.lock().await;
         if session.snapshot.stage != "streaming" {
-            return Err(AppError::new(ErrorCode::SessionEnded, "当前没有活动的远控会话。"));
+            return Err(AppError::new(
+                ErrorCode::SessionEnded,
+                "当前没有活动的远控会话。",
+            ));
         }
         session.child.as_ref().and_then(tokio::process::Child::id)
     };
@@ -252,7 +257,10 @@ pub async fn show_remote_window(runtime: &Runtime, owner: &WebviewWindow) -> Res
     if receive.await == Ok(true) {
         Ok(())
     } else {
-        Err(AppError::new(ErrorCode::SystemFailed, "Windows 未能恢复远控窗口。"))
+        Err(AppError::new(
+            ErrorCode::SystemFailed,
+            "Windows 未能恢复远控窗口。",
+        ))
     }
 }
 
@@ -268,8 +276,91 @@ fn cursor_position() -> Option<(i32, i32)> {
     None
 }
 
-fn window_error(_: tauri::Error) -> AppError {
+fn window_error(error: tauri::Error) -> AppError {
+    tracing::warn!(%error, "Session window operation failed");
     AppError::new(ErrorCode::SystemFailed, "无法调整会话悬浮窗口。")
+}
+
+fn session_window_config(
+    runtime: &Runtime,
+    label: &str,
+) -> Result<tauri::utils::config::WindowConfig> {
+    let mut config = runtime
+        .app
+        .config()
+        .app
+        .windows
+        .iter()
+        .find(|config| config.label == "main")
+        .cloned()
+        .ok_or_else(|| AppError::new(ErrorCode::SystemFailed, "主窗口配置不可用。"))?;
+    // Keep browser options consistent with the main window.
+    config.label = label.into();
+    Ok(config)
+}
+
+fn session_window_builder<'a>(
+    app: &'a AppHandle,
+    config: &tauri::utils::config::WindowConfig,
+    performance: bool,
+) -> Result<WebviewWindowBuilder<'a, tauri::Wry, AppHandle>> {
+    let builder = WebviewWindowBuilder::from_config(app, config)
+        .map_err(window_error)?
+        .title(if performance {
+            "LL远程 · 性能监测"
+        } else {
+            "LL远程 · 本次连接"
+        })
+        .decorations(false)
+        .transparent(true)
+        .always_on_top(true)
+        .skip_taskbar(true)
+        .resizable(false)
+        .shadow(false)
+        .focused(false)
+        .visible(false)
+        .min_inner_size(1.0, 1.0);
+    Ok(if performance {
+        builder.focusable(false).inner_size(192.0, 145.0)
+    } else {
+        builder.inner_size(BALL_DIAMETER, BALL_DIAMETER)
+    })
+}
+
+async fn create_session_window(
+    runtime: &Runtime,
+    label: &str,
+    performance: bool,
+) -> Result<WebviewWindow> {
+    let config = session_window_config(runtime, label)?;
+    #[cfg(windows)]
+    {
+        let app = runtime.app.clone();
+        let main = app
+            .get_webview_window("main")
+            .ok_or_else(|| AppError::new(ErrorCode::SystemFailed, "主窗口不可用。"))?;
+        let (send, receive) = tokio::sync::oneshot::channel();
+        // Reuse the live WebView2 environment, not just its config. Create the
+        // controller on the UI thread so all webviews share the same apartment
+        // and portable data directory without starting another environment.
+        main.with_webview(move |webview| {
+            let result = session_window_builder(&app, &config, performance).and_then(|builder| {
+                builder
+                    .with_environment(webview.environment())
+                    .build()
+                    .map_err(window_error)
+            });
+            let _ = send.send(result);
+        })
+        .map_err(window_error)?;
+        receive.await.map_err(|_| {
+            AppError::new(ErrorCode::SystemFailed, "会话悬浮窗口创建未完成。")
+        })?
+    }
+    #[cfg(not(windows))]
+    session_window_builder(&runtime.app, &config, performance)?
+        .build()
+        .map_err(window_error)
 }
 
 fn overlay_window(runtime: &Runtime) -> Result<WebviewWindow> {
@@ -399,25 +490,25 @@ pub async fn show(runtime: &Arc<Runtime>) -> Result<()> {
     if cancel.is_cancelled() {
         return Err(AppError::new(ErrorCode::SessionEnded, "此会话已经结束。"));
     }
-    let window = WebviewWindowBuilder::new(
-        &runtime.app,
-        "session-controls",
-        WebviewUrl::App("index.html".into()),
-    )
-    .title("LL远程 · 本次连接")
-    .decorations(false)
-    .transparent(true)
-    .always_on_top(true)
-    .skip_taskbar(true)
-    .resizable(false)
-    .shadow(false)
-    .focused(false)
-    .visible(false)
-    .inner_size(BALL_DIAMETER, BALL_DIAMETER)
-    .min_inner_size(1.0, 1.0)
-    .build()
-    .map_err(window_error)?;
+    let window = create_session_window(runtime, "session-controls", false).await?;
     *overlay = Overlay::default();
+    let pid = runtime
+        .session
+        .lock()
+        .await
+        .child
+        .as_ref()
+        .and_then(tokio::process::Child::id);
+    // Show the ball immediately for the connected stream; the tracking loop
+    // subsequently applies normal visibility/focus checks.
+    if let Err(error) = position(
+        &window,
+        &mut overlay,
+        pid.and_then(|pid| stream_area(pid, &window, false)),
+    ) {
+        let _ = window.destroy();
+        return Err(error);
+    }
     let runtime = runtime.clone();
     tokio::spawn(async move {
         let mut tick = tokio::time::interval(Duration::from_millis(80));
@@ -472,7 +563,14 @@ pub fn close(app: &AppHandle) {
 }
 
 pub async fn show_performance(runtime: &Arc<Runtime>) -> Result<()> {
-    if runtime.app.get_webview_window("session-performance").is_some() {
+    if !runtime.store()?.preferences.show_performance_monitor {
+        return Ok(());
+    }
+    if runtime
+        .app
+        .get_webview_window("session-performance")
+        .is_some()
+    {
         return Ok(());
     }
     let (id, cancel) = {
@@ -482,24 +580,7 @@ pub async fn show_performance(runtime: &Arc<Runtime>) -> Result<()> {
     if cancel.is_cancelled() {
         return Ok(());
     }
-    let window = WebviewWindowBuilder::new(
-        &runtime.app,
-        "session-performance",
-        WebviewUrl::App("index.html".into()),
-    )
-    .title("LL远程 · 性能监测")
-    .decorations(false)
-    .transparent(true)
-    .always_on_top(true)
-    .skip_taskbar(true)
-    .resizable(false)
-    .shadow(false)
-    .focusable(false)
-    .visible(false)
-    .inner_size(192.0, 145.0)
-    .min_inner_size(1.0, 1.0)
-    .build()
-    .map_err(window_error)?;
+    let window = create_session_window(runtime, "session-performance", true).await?;
     if let Err(error) = window.set_ignore_cursor_events(true) {
         let _ = window.destroy();
         return Err(window_error(error));
@@ -533,14 +614,17 @@ pub async fn show_performance(runtime: &Arc<Runtime>) -> Result<()> {
                 continue;
             }
             let Some(area) = pid.and_then(|pid| stream_area(pid, &window, false)) else {
+                if current.is_some() && window.hide().is_ok() {
+                    current = None;
+                }
                 continue;
             };
             let margin = (16.0 * area.scale).round() as i32;
-            let width = ((192.0 * area.scale).round() as i32).min(area.work.width);
-            let height = ((145.0 * area.scale).round() as i32).min(area.work.height);
+            let width = ((192.0 * area.scale).round() as i32).min(area.client.width);
+            let height = ((145.0 * area.scale).round() as i32).min(area.client.height);
             let rect = Rect {
-                left: area.work.left + (area.work.width - width - margin).max(0),
-                top: area.work.top + (area.work.height - height - margin).max(0),
+                left: area.client.left + (area.client.width - width - margin).max(0),
+                top: area.client.top + (area.client.height - height - margin).max(0),
                 width,
                 height,
             };

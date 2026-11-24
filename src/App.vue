@@ -12,6 +12,7 @@ import SessionPanel from './pages/SessionPanel.vue'
 import SessionPerformance from './pages/SessionPerformance.vue'
 import MainSidebar from './components/MainSidebar.vue'
 import IncomingControlPanel from './components/IncomingControlPanel.vue'
+import RoleSwitchDialog from './components/RoleSwitchDialog.vue'
 import type { UnlistenFn } from '@tauri-apps/api/event'
 import type { IncomingControl } from './types'
 const app = useAppStore()
@@ -35,7 +36,10 @@ let stopFocusListener: UnlistenFn | undefined
 let stopIncomingListener: UnlistenFn | undefined
 const incomingControl = ref<IncomingControl | null>(null)
 const incomingExpanded = ref(false)
-const deviceHasStream = computed(() => route.name === 'device' && route.params.id === app.snapshot.session.deviceId && app.snapshot.session.stage === 'streaming')
+const routeDeviceId = computed(() => route.name === 'history-device'
+  ? app.snapshot.history.find(entry => entry.id === route.params.id)?.deviceId
+  : ['device', 'saved-history-device', 'favorite-device'].includes(String(route.name)) ? route.params.id : null)
+const deviceHasStream = computed(() => routeDeviceId.value === app.snapshot.session.deviceId && !!routeDeviceId.value && app.snapshot.session.stage === 'streaming')
 
 function updateIncomingControl(control: IncomingControl) {
   if (control.count === 0) {
@@ -134,7 +138,12 @@ watch(() => app.snapshot.session.stage, stage => {
   if (stage === 'pairing') router.push('/pairing')
   else if (stage === 'streaming' && route.name === 'pairing' && app.snapshot.session.deviceId) router.replace(`/device/${app.snapshot.session.deviceId}`)
 })
-watch(() => route.fullPath, () => { app.error = null; document.querySelector('.workspace')?.scrollTo({ top: 0 }); if (route.params.id) app.selectedDeviceId = String(route.params.id) })
+watch(() => route.fullPath, () => {
+  app.error = null
+  document.querySelector('.workspace')?.scrollTo({ top: 0 })
+  const id = routeDeviceId.value || route.params.id
+  if (typeof id === 'string' && app.snapshot.devices.some(device => device.id === id)) app.selectedDeviceId = id
+})
 </script>
 <template>
   <SessionPerformance v-if="performanceWindow" />
@@ -169,6 +178,7 @@ watch(() => route.fullPath, () => { app.error = null; document.querySelector('.w
       <div v-else class="loading-page"><span class="spinner"/>正在读取本机配置…</div>
     </main>
   </div>
+  <RoleSwitchDialog v-if="!overlay" />
   <dialog v-if="!overlay" ref="pairingDialog" class="pairing-dialog" aria-labelledby="incomingPairingTitle" @close="clearPairingInput" @cancel="app.loading && $event.preventDefault()">
     <h2 id="incomingPairingTitle">确认远程连接 PIN</h2>
     <p>有设备请求控制本机。请输入对方 LL远程显示的四位 PIN，确认后对方会自动进入桌面。</p>

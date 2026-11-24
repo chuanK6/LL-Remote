@@ -21,6 +21,7 @@ pub enum ErrorCode {
     VirtualAdapterFailed,
     SunshineUnavailable,
     AddressRequired,
+    RoleSwitchRequired,
     SunshineAccountRequired,
     PairingRequired,
     PairingFailed,

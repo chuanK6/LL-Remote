@@ -55,7 +55,10 @@ fn fit_main_window(window: &tauri::WebviewWindow) -> tauri::Result<()> {
         inner.height.min(available.height.max(1)),
     );
     let minimum = LogicalSize::new(620.0, 380.0).to_physical::<u32>(scale);
-    let minimum = PhysicalSize::new(minimum.width.min(size.width), minimum.height.min(size.height));
+    let minimum = PhysicalSize::new(
+        minimum.width.min(size.width),
+        minimum.height.min(size.height),
+    );
     window.set_min_size(Some(minimum.to_logical::<f64>(scale)))?;
     window.set_size(size)?;
     window.set_position(PhysicalPosition::new(
@@ -104,6 +107,7 @@ pub fn run() {
             commands::save_quick_apps,
             commands::associate_host,
             commands::connect_device,
+            commands::resolve_role_switch,
             commands::cancel_connection,
             commands::disconnect_device,
             commands::get_session,

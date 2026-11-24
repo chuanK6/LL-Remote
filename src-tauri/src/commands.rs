@@ -64,7 +64,6 @@ pub async fn login_jiaoyue(
 ) -> Result<AppSnapshot> {
     main_only(&window)?;
     no_active_session(&runtime)?;
-    let _guard = runtime.administrative_lock.lock().await;
     let password = Zeroizing::new(password);
     if username.trim().is_empty() || password.is_empty() {
         return Err(AppError::new(
@@ -72,6 +71,8 @@ pub async fn login_jiaoyue(
             "请填写皎月连账号和密码。",
         ));
     }
+    runtime.revoke_role_for_account_change(&username).await;
+    let _guard = runtime.administrative_lock.lock().await;
     runtime.require_sunshine_account().await?;
     runtime.engines.ensure_nat().await?;
     let account = runtime
@@ -111,7 +112,10 @@ pub async fn authorize_jiaoyue(
     if runtime.store()?.preferences.remember_login {
         runtime.vault.put(
             &Vault::reference("local", "jiaoyue-local-access"),
-            &SecretRecord { username: String::new(), password: password.to_string() },
+            &SecretRecord {
+                username: String::new(),
+                password: password.to_string(),
+            },
         )?;
     }
     runtime.refresh().await
@@ -120,6 +124,7 @@ pub async fn authorize_jiaoyue(
 pub async fn logout_jiaoyue(window: WebviewWindow, runtime: Backend<'_>) -> Result<AppSnapshot> {
     main_only(&window)?;
     no_active_session(&runtime)?;
+    runtime.cancel_role_restore().await;
     let _guard = runtime.administrative_lock.lock().await;
     runtime.nat.logout().await?;
     runtime
@@ -206,6 +211,7 @@ pub async fn set_accept_control(
     let _guard = runtime.administrative_lock.lock().await;
     let started = SystemTime::now();
     let password = Zeroizing::new(password);
+    runtime.require_no_role_pause().await?;
     let web_password = Zeroizing::new(web_password.unwrap_or_default());
     runtime.require_sunshine_account().await?;
     if let Err(error) = runtime.engines.ensure_nat().await {
@@ -406,6 +412,11 @@ pub async fn delete_device(
         .gate
         .try_acquire()
         .map_err(|_| AppError::new(ErrorCode::Busy, "请先断开当前远控，再删除设备。"))?;
+    let _guard = runtime.administrative_lock.lock().await;
+    let device = runtime.store()?.device(&device_id)?;
+    if runtime.nat.cached_connection().await.is_some_and(|connection| connection.matches_device(&device)) {
+        runtime.nat.disconnect_device(&device).await?;
+    }
     runtime.store()?.remove_device(&device_id)?;
     runtime.snapshot().await
 }
@@ -419,9 +430,15 @@ pub async fn wallpaper_path(
     let path = runtime.store()?.wallpaper_path(&relative)?;
     // The data root can be portable or a debug override. Grant only this
     // validated, canonical file instead of relying on config-time glob paths.
-    window.asset_protocol_scope().allow_file(&path).map_err(|_| {
-        AppError::new(ErrorCode::PermissionDenied, "无法授权读取此壁纸，请重新选择图片。")
-    })?;
+    window
+        .asset_protocol_scope()
+        .allow_file(&path)
+        .map_err(|_| {
+            AppError::new(
+                ErrorCode::PermissionDenied,
+                "无法授权读取此壁纸，请重新选择图片。",
+            )
+        })?;
     Ok(path.to_string_lossy().into())
 }
 #[tauri::command]
@@ -553,6 +570,16 @@ pub async fn connect_device(
     runtime.inner().connect(request).await
 }
 #[tauri::command]
+pub async fn resolve_role_switch(
+    window: WebviewWindow,
+    runtime: Backend<'_>,
+    session_id: String,
+    enabled: bool,
+) -> Result<()> {
+    main_only(&window)?;
+    runtime.resolve_role_switch(&session_id, enabled).await
+}
+#[tauri::command]
 pub async fn cancel_connection(
     window: WebviewWindow,
     runtime: Backend<'_>,
@@ -575,9 +602,15 @@ pub async fn get_session(window: WebviewWindow, runtime: Backend<'_>) -> Result<
     Ok(runtime.session.lock().await.snapshot.clone())
 }
 #[tauri::command]
-pub async fn get_session_performance(window: WebviewWindow, runtime: Backend<'_>) -> Result<Metrics> {
+pub async fn get_session_performance(
+    window: WebviewWindow,
+    runtime: Backend<'_>,
+) -> Result<Metrics> {
     if window.label() != "session-performance" {
-        return Err(AppError::new(ErrorCode::PermissionDenied, "仅性能监测窗口可读取此状态。"));
+        return Err(AppError::new(
+            ErrorCode::PermissionDenied,
+            "仅性能监测窗口可读取此状态。",
+        ));
     }
     Ok(runtime.session.lock().await.snapshot.metrics.clone())
 }
@@ -587,12 +620,18 @@ pub async fn show_remote_window(window: WebviewWindow, runtime: Backend<'_>) -> 
     controls::show_remote_window(&runtime, &window).await
 }
 #[tauri::command]
-pub async fn get_incoming_control(window: WebviewWindow, runtime: Backend<'_>) -> Result<IncomingControl> {
+pub async fn get_incoming_control(
+    window: WebviewWindow,
+    runtime: Backend<'_>,
+) -> Result<IncomingControl> {
     main_only(&window)?;
     Ok(runtime.sunshine.incoming_control().await)
 }
 #[tauri::command]
-pub async fn disconnect_incoming_control(window: WebviewWindow, runtime: Backend<'_>) -> Result<()> {
+pub async fn disconnect_incoming_control(
+    window: WebviewWindow,
+    runtime: Backend<'_>,
+) -> Result<()> {
     main_only(&window)?;
     runtime.disconnect_incoming_control().await
 }
@@ -655,19 +694,36 @@ pub async fn set_session_performance_enabled(
             "仅悬浮球面板可更改性能监测开关。",
         ));
     }
-    let session = runtime.session.lock().await;
-    if session.snapshot.id.as_deref() != Some(session_id.as_str())
-        || !matches!(session.snapshot.stage.as_str(), "streaming" | "reconnecting")
-        || session.cancel.is_cancelled()
-    {
-        return Err(AppError::new(ErrorCode::SessionEnded, "当前没有活动的远控会话。"));
-    }
-    let mut store = runtime.store()?;
-    let previous = store.preferences.show_performance_monitor;
-    if enabled != previous {
-        store.preferences.show_performance_monitor = enabled;
-        if let Err(error) = store.save_preferences() {
+    let previous = {
+        let session = runtime.session.lock().await;
+        if session.snapshot.id.as_deref() != Some(session_id.as_str())
+            || !matches!(
+                session.snapshot.stage.as_str(),
+                "streaming" | "reconnecting"
+            )
+            || session.cancel.is_cancelled()
+        {
+            return Err(AppError::new(
+                ErrorCode::SessionEnded,
+                "当前没有活动的远控会话。",
+            ));
+        }
+        let mut store = runtime.store()?;
+        let previous = store.preferences.show_performance_monitor;
+        if enabled != previous {
+            store.preferences.show_performance_monitor = enabled;
+            if let Err(error) = store.save_preferences() {
+                store.preferences.show_performance_monitor = previous;
+                return Err(error);
+            }
+        }
+        previous
+    };
+    if enabled {
+        if let Err(error) = controls::show_performance(runtime.inner()).await {
+            let mut store = runtime.store()?;
             store.preferences.show_performance_monitor = previous;
+            store.save_preferences()?;
             return Err(error);
         }
     }

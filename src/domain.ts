@@ -2,8 +2,8 @@ import type { Account, AppError, Device, SessionPatch, SessionSnapshot, StreamPr
 
 export const statusLabel = (status: string): string => ({ online: '在线', offline: '离线', unknown: '状态未知', pending: '服务未就绪' }[status] || '状态未知')
 export const sourceLabel = (source: string): string => ({ account: '同账号设备', code: '识别码历史', existing: '已有连接' }[source] || '已有连接')
-export const stageLabel = (stage: string): string => ({ idle: '尚未连接', preparingNetwork: '正在建立皎月连网络', checkingHost: '正在检查 Sunshine', checkingPairing: '正在检查配对', pairing: '等待首次配对确认', startingStream: '正在启动远程桌面', streaming: '远程桌面已启动', reconnecting: '正在恢复连接', disconnecting: '正在断开本次连接', disconnectFailed: '皎月连断开未确认', failed: '连接未完成', canceled: '已取消连接', disconnected: '本次连接已结束' }[stage] || '正在连接')
-export const isConnecting = (stage: string): boolean => ['preparingNetwork', 'checkingHost', 'checkingPairing', 'pairing', 'startingStream', 'reconnecting'].includes(stage)
+export const stageLabel = (stage: string): string => ({ awaitingRoleSwitch: '\u7b49\u5f85\u786e\u8ba4\u81ea\u52a8\u5207\u6362\u89d2\u8272', idle: '尚未连接', preparingNetwork: '正在建立皎月连网络', checkingHost: '正在检查 Sunshine', checkingPairing: '正在检查配对', pairing: '等待首次配对确认', startingStream: '正在启动远程桌面', streaming: '远程桌面已启动', reconnecting: '正在恢复连接', disconnecting: '正在断开本次连接', disconnectFailed: '皎月连断开未确认', failed: '连接未完成', canceled: '已取消连接', disconnected: '本次连接已结束' }[stage] || '正在连接')
+export const isConnecting = (stage: string): boolean => ['awaitingRoleSwitch', 'preparingNetwork', 'checkingHost', 'checkingPairing', 'pairing', 'startingStream', 'reconnecting'].includes(stage)
 export function hasActiveDeviceSession(deviceId: string, session: SessionSnapshot): boolean {
   return session.deviceId === deviceId && (isConnecting(session.stage) || ['streaming', 'disconnecting', 'disconnectFailed'].includes(session.stage))
 }

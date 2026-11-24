@@ -17,6 +17,10 @@ pub fn digest(text: &str) -> String {
 }
 
 pub fn atomic_write(path: &Path, bytes: &[u8]) -> Result<()> {
+    write_atomic(path, bytes, true)
+}
+
+fn write_atomic(path: &Path, bytes: &[u8], preserve_previous: bool) -> Result<()> {
     let parent = path
         .parent()
         .ok_or_else(|| AppError::new(ErrorCode::StorageFailed, "数据路径无效。"))?;
@@ -31,7 +35,7 @@ pub fn atomic_write(path: &Path, bytes: &[u8]) -> Result<()> {
         file.write_all(bytes)?;
         file.sync_all()?;
         drop(file);
-        if path.exists() {
+        if preserve_previous && path.exists() {
             fs::copy(path, path.with_extension("bak"))?;
         }
         #[cfg(windows)]
@@ -170,19 +174,60 @@ impl Store {
             })
     }
     pub fn remove_device(&mut self, id: &str) -> Result<()> {
-        self.device(id)?;
+        let device = self.device(id)?;
+        let wallpaper = device.wallpaper.as_deref()
+            .map(|relative| self.obsolete_wallpaper(relative, id)).transpose()?.flatten();
+        let credential = device.credential_ref.as_deref()
+            .map(|reference| self.obsolete_device_credential(&device, reference))
+            .transpose()?.filter(|obsolete| *obsolete)
+            .and(device.credential_ref.as_deref());
         let mut account = self.account_data.clone();
         account.devices.retain(|candidate| candidate.id != id);
-        atomic_write(
-            &self
-                .root
-                .join("accounts")
-                .join(&self.account_scope)
-                .join("devices.json"),
-            &serde_json::to_vec_pretty(&account)?,
-        )?;
+        account.history.retain(|entry| entry.device_id.as_deref() != Some(id));
+        let path = self.root.join("accounts").join(&self.account_scope).join("devices.json");
+        let bytes = serde_json::to_vec_pretty(&account)?;
+        // Hard deletion must also remove the record from recovery data. Write
+        // the sanitized backup first; neither write preserves the deleted row.
+        write_atomic(&path.with_extension("bak"), &bytes, false)?;
+        write_atomic(&path, &bytes, false)?;
         self.account_data = account;
+        let credential_result = credential.map(|reference| Vault::new(&self.root).delete(reference)).transpose();
+        let wallpaper_result = wallpaper.map(|path| match fs::remove_file(path) {
+            Err(error) if error.kind() != std::io::ErrorKind::NotFound => Err(AppError::from(error)),
+            _ => Ok(()),
+        }).transpose();
+        credential_result?;
+        wallpaper_result?;
         Ok(())
+    }
+
+    fn obsolete_device_credential(&self, device: &Device, reference: &str) -> Result<bool> {
+        let owned = device.uuid.iter().chain(&device.nat_id).chain(&device.known_nat_ids)
+            .chain(&device.peer_code)
+            .any(|identity| Vault::reference(&self.account_scope, identity).eq_ignore_ascii_case(reference));
+        if !owned || self.account_data.devices.iter()
+            .any(|other| other.id != device.id && other.credential_ref.as_deref().is_some_and(|value| value.eq_ignore_ascii_case(reference)))
+        {
+            return Ok(false);
+        }
+        let accounts = self.root.join("accounts");
+        if accounts.exists() {
+            for entry in fs::read_dir(accounts)? {
+                let entry = entry?;
+                if !entry.file_type()?.is_dir() || entry.file_name() == self.account_scope.as_str() {
+                    continue;
+                }
+                let (account, _): (AccountData, bool) = read_json(&entry.path().join("devices.json"))?;
+                if account.devices.iter().any(|other| other.credential_ref.as_deref().is_some_and(|value| value.eq_ignore_ascii_case(reference))) {
+                    return Ok(false);
+                }
+            }
+        }
+        let directory = self.root.join("credentials");
+        if directory.exists() && directory.canonicalize()? != self.root.canonicalize()?.join("credentials") {
+            return Err(AppError::new(ErrorCode::PermissionDenied, "凭据不在应用数据目录内，无法删除。"));
+        }
+        Ok(true)
     }
     pub fn merge_device(&mut self, mut incoming: Device) -> String {
         for identifier in [

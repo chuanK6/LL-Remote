@@ -11,10 +11,11 @@ export interface StreamPreferences {
 }
 export interface GeneralPreferences {
   preventSleep: boolean; keepDisplayAwake: boolean; autostart: boolean; keepRunningInTrayOnClose: boolean
-  rememberLogin: boolean; autoRetry: boolean; alwaysAcceptControl: boolean; showFloatBall: boolean; reuseExisting: boolean
+  rememberLogin: boolean; autoRetry: boolean; alwaysAcceptControl: boolean; automaticRoleSwitch: boolean; showFloatBall: boolean; reuseExisting: boolean
 }
 export interface Preferences extends GeneralPreferences {
   acceptControl: boolean
+  showPerformanceMonitor: boolean
   setupComplete: boolean; onboardingComplete: boolean; firstConnectionComplete: boolean; sunshineUsername: string | null; moonlightImported: boolean; stream: StreamPreferences
 }
 export interface Account {
@@ -27,7 +28,7 @@ export interface PublishedApp { id: string; name: string }
 export interface Device {
   id: string; hostName: string; displayName: string; source: string; natId: string | null
   uuid: string | null; address: string | null; peerCode: string | null
-  status: string; networkConnected: boolean; serviceReady: boolean | null; observedAt: string | null; lastConnectedAt: string | null
+  status: string; networkConnected: boolean; accountOnline?: boolean; serviceReady: boolean | null; observedAt: string | null; lastConnectedAt: string | null
   favorite: boolean; note: string; wallpaper: string | null; credentialRef: string | null
   credentialState: string; preferences: StreamPreferences; apps: PublishedApp[]; quickApps: string[]
 }
@@ -49,7 +50,7 @@ export interface Metrics {
 export interface SessionSnapshot {
   id: string | null; deviceId: string | null; deviceName: string | null; stage: string; attempt: number
   app: string | null; pin: string | null; error: AppError | null; preferences: StreamPreferences | null
-  startedAt: string | null; metrics: Metrics; extensionAvailable: boolean
+  startedAt: string | null; metrics: Metrics; extensionAvailable: boolean; localAcceptancePaused: boolean
 }
 export interface IncomingControl {
   count: number
@@ -73,7 +74,7 @@ export type SessionPatch =
 export interface Diagnostic { name: string; status: string; detail: string }
 
 export const defaultStream = (): StreamPreferences => ({ width: 1920, height: 1080, fps: 60, bitrateKbps: 15000, codec: 'auto', windowMode: 'windowed', mouseMode: 'office', audioConfig: 'stereo', hostAudio: false, volume: 75, muted: false, audioDevice: '', captureKeys: 'fullscreen', gamepad: true })
-export const defaultPreferences = (): Preferences => ({ preventSleep: true, keepDisplayAwake: false, autostart: false, keepRunningInTrayOnClose: true, rememberLogin: true, autoRetry: true, acceptControl: false, alwaysAcceptControl: false, showFloatBall: true, setupComplete: false, onboardingComplete: false, firstConnectionComplete: false, sunshineUsername: null, reuseExisting: true, moonlightImported: false, stream: defaultStream() })
+export const defaultPreferences = (): Preferences => ({ preventSleep: true, keepDisplayAwake: false, autostart: false, keepRunningInTrayOnClose: true, rememberLogin: true, autoRetry: true, acceptControl: false, alwaysAcceptControl: false, automaticRoleSwitch: false, showPerformanceMonitor: false, showFloatBall: true, setupComplete: false, onboardingComplete: false, firstConnectionComplete: false, sunshineUsername: null, reuseExisting: true, moonlightImported: false, stream: defaultStream() })
 export const emptyMetrics = (): Metrics => ({ fps: null, bitrateMbps: null, networkMs: null, decodeMs: null, renderMs: null, droppedPercent: null, updatedAt: null })
-export const emptySession = (): SessionSnapshot => ({ id: null, deviceId: null, deviceName: null, stage: 'idle', attempt: 0, app: null, pin: null, error: null, preferences: null, startedAt: null, metrics: emptyMetrics(), extensionAvailable: false })
+export const emptySession = (): SessionSnapshot => ({ id: null, deviceId: null, deviceName: null, stage: 'idle', attempt: 0, app: null, pin: null, error: null, preferences: null, startedAt: null, metrics: emptyMetrics(), extensionAvailable: false, localAcceptancePaused: false })
 export const emptySnapshot = (): AppSnapshot => ({ version, portable: false, dataDirectory: '', preferences: defaultPreferences(), account: { username: null, authenticated: false, quotaMinutes: null, quotaState: 'unknown', updatedAt: null, localCode: null, localName: null, localVpnAddress: null, serverRunning: false, protocolSupported: false }, devices: [], history: [], sunshine: { running: false, ready: false, accountInitialized: false, accountUsername: null, credentialValid: false, external: false, port: 47990, locale: 'zh', apps: [], pendingPairings: [], config: { outputName: '', audioSink: '', adapterName: '' } }, session: emptySession(), components: [], powerStatus: '正在检查', storageWarning: null })

@@ -30,6 +30,78 @@ pub fn config_value(path: &Path, key: &str) -> Option<String> {
             (name.trim() == key).then(|| value.trim().trim_matches('"').to_owned())
         })
 }
+fn rebase_managed_config(config: &Path, base: &Path) -> Result<()> {
+    if !config.is_file() {
+        return Ok(());
+    }
+    let text = fs::read_to_string(config)?;
+    let mut updated = String::with_capacity(text.len());
+    let mut changed = false;
+    for line in text.split_inclusive('\n') {
+        let body = line.trim_end_matches(['\r', '\n']);
+        let ending = &line[body.len()..];
+        let Some((name, value)) = body.split_once('=') else {
+            updated.push_str(line);
+            continue;
+        };
+        if body.trim_start().starts_with('#')
+            || !matches!(
+                name.trim(),
+                "credentials_file" | "file_state" | "file_apps" | "cert" | "pkey" | "log_path"
+            )
+        {
+            updated.push_str(line);
+            continue;
+        }
+        let value = value.trim();
+        let (stored, trailing, quoted) = if let Some(quoted) = value.strip_prefix('"') {
+            let Some(end) = quoted.find('"') else {
+                updated.push_str(line);
+                continue;
+            };
+            (&quoted[..end], &quoted[end + 1..], true)
+        } else if let Some((path, _)) = value.split_once(" #") {
+            (path, &value[path.len()..], false)
+        } else {
+            (value, "", false)
+        };
+        let normalized = stored.replace('\\', "/");
+        let marker = "/engines/sunshine/";
+        let Some(index) = normalized.to_ascii_lowercase().rfind(marker) else {
+            updated.push_str(line);
+            continue;
+        };
+        if !Path::new(stored).is_absolute() {
+            updated.push_str(line);
+            continue;
+        }
+        let suffix = Path::new(&normalized[index + marker.len()..]);
+        if suffix.as_os_str().is_empty()
+            || suffix
+                .components()
+                .any(|part| !matches!(part, std::path::Component::Normal(_)))
+        {
+            updated.push_str(line);
+            continue;
+        }
+        let current = base.join(suffix).to_string_lossy().replace('\\', "/");
+        if current == normalized {
+            updated.push_str(line);
+            continue;
+        }
+        let quotes = if quoted { "\"" } else { "" };
+        updated.push_str(&format!(
+            "{name}= {quotes}{current}{quotes}{trailing}{ending}"
+        ));
+        changed = true;
+    }
+    if changed {
+        // Only relocated LL-managed paths are rebased. Preserve the moved
+        // account, certificates, pairing state, app list and custom settings.
+        atomic_write(config, updated.as_bytes())?;
+    }
+    Ok(())
+}
 pub fn web_port(path: &Path) -> Result<u16> {
     let base = config_value(path, "port")
         .map(|port| port.parse::<u16>())
@@ -140,6 +212,9 @@ impl SunshineAdapter {
             .map(|s| s.sunshine_root.clone())
             .unwrap_or_else(|| data_root.join("engines/Sunshine"));
         let config_path = base.join("config/sunshine.conf");
+        if !external {
+            rebase_managed_config(&config_path, &base)?;
+        }
         let resolve_config_path = |name: &str, default: &str| {
             config_value(&config_path, name)
                 .map(PathBuf::from)

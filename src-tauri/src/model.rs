@@ -157,6 +157,7 @@ pub struct Preferences {
     pub remember_login: bool,
     pub auto_retry: bool,
     pub always_accept_control: bool,
+    pub automatic_role_switch: bool,
     #[serde(skip_deserializing)]
     pub accept_control: bool,
     pub show_float_ball: bool,
@@ -179,9 +180,10 @@ impl Default for Preferences {
             remember_login: true,
             auto_retry: true,
             always_accept_control: false,
+            automatic_role_switch: false,
             accept_control: false,
             show_float_ball: true,
-            show_performance_monitor: true,
+            show_performance_monitor: false,
             setup_complete: false,
             onboarding_complete: false,
             first_connection_complete: false,
@@ -203,6 +205,7 @@ pub struct GeneralPreferencesPatch {
     pub remember_login: Option<bool>,
     pub auto_retry: Option<bool>,
     pub always_accept_control: Option<bool>,
+    pub automatic_role_switch: Option<bool>,
     pub show_float_ball: Option<bool>,
     pub reuse_existing: Option<bool>,
 }
@@ -222,6 +225,10 @@ impl GeneralPreferencesPatch {
             (
                 &mut preferences.always_accept_control,
                 self.always_accept_control,
+            ),
+            (
+                &mut preferences.automatic_role_switch,
+                self.automatic_role_switch,
             ),
             (&mut preferences.show_float_ball, self.show_float_ball),
             (&mut preferences.reuse_existing, self.reuse_existing),
@@ -278,6 +285,8 @@ pub struct Device {
     pub status: String,
     #[serde(skip_deserializing)]
     pub network_connected: bool,
+    #[serde(skip_deserializing)]
+    pub account_online: bool,
     pub service_ready: Option<bool>,
     pub observed_at: Option<String>,
     pub last_connected_at: Option<String>,
@@ -304,6 +313,7 @@ impl Default for Device {
             peer_code: None,
             status: "unknown".into(),
             network_connected: false,
+            account_online: false,
             service_ready: None,
             observed_at: None,
             last_connected_at: None,
@@ -441,6 +451,8 @@ pub struct SessionSnapshot {
     pub started_at: Option<String>,
     pub metrics: Metrics,
     pub extension_available: bool,
+    #[serde(default)]
+    pub local_acceptance_paused: bool,
 }
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

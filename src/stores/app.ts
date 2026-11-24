@@ -16,7 +16,10 @@ export const useAppStore = defineStore('app', () => {
   const selectedDeviceId = ref<string | null>(null)
   const firstConnectionObserved = ref(false)
   const selectedDevice = computed(() => snapshot.value.devices.find(d => d.id === selectedDeviceId.value) || null)
-  const busy = computed(() => connectionRequestPending.value || isConnecting(snapshot.value.session.stage) || snapshot.value.session.stage === 'streaming')
+  const onlineAccountDevices = computed(() => snapshot.value.account.authenticated
+    ? snapshot.value.devices.filter(device => device.accountOnline === true)
+    : [])
+  const busy = computed(() => connectionRequestPending.value || isConnecting(snapshot.value.session.stage) || snapshot.value.session.stage === 'streaming' || snapshot.value.session.localAcceptancePaused)
   const needsOnboarding = computed(() => !firstConnectionObserved.value && !snapshot.value.preferences.firstConnectionComplete)
   const onboardingPath = computed(() => snapshot.value.preferences.setupComplete ? snapshot.value.account.authenticated ? '/devices' : '/login' : '/setup')
   let initialization: Promise<void> | undefined
@@ -100,5 +103,10 @@ export const useAppStore = defineStore('app', () => {
       } finally { disconnectingDeviceId.value = null }
     })
   }
-  return { snapshot, initialized, loading, refreshing, error, notice, selectedDeviceId, selectedDevice, busy, disconnectingDeviceId, firstConnectionObserved, needsOnboarding, onboardingPath, init, apply, tell, run, saveSetting, refresh, refreshBackground, connect, disconnectDevice }
+  async function deleteSavedDevice(deviceId: string) {
+    const value = await run(() => bridge.deleteDevice(deviceId))
+    if (value) { apply(value); tell('已删除设备及连接记录。') }
+    else await refreshBackground()
+  }
+  return { snapshot, initialized, loading, refreshing, error, notice, selectedDeviceId, selectedDevice, onlineAccountDevices, busy, disconnectingDeviceId, firstConnectionObserved, needsOnboarding, onboardingPath, init, apply, tell, run, saveSetting, refresh, refreshBackground, connect, disconnectDevice, deleteSavedDevice }
 })
