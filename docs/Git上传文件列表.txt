@@ -34,6 +34,7 @@ docs/cleanup-history/2026-11-23/validation.json
 docs/cleanup-history/2026-11-23/workspace-cleanup-preservation.json
 docs/cleanup-history/2026-11-23/write-cleanup-report.py
 docs/cleanup-history/2026-11-23/工作区清理清单.md
+docs/releases/0.1.14-publication.json
 docs/releases/0.1.14.md
 docs/screenshots/device.png
 docs/screenshots/moonlight.png

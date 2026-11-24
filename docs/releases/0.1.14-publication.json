@@ -1,0 +1,46 @@
+{
+  "published": true,
+  "releaseId": 456875940,
+  "releaseUrl": "https://github.com/chuanK6/LL-Remote/releases/tag/v0.1.14",
+  "tag": "v0.1.14",
+  "sourceCommit": "15024f872e00857e50010497c2cc6787414a14e5",
+  "assets": [
+    {
+      "name": "LLRemote-Portable-x64-0.1.14.zip",
+      "label": "便携版：修复地址冲突、Data路径、悬浮球和记录管理",
+      "size": 182121916,
+      "digest": "sha256:5dd7a4648134a49b3abe8634997b07fc05f8e0058f50c8af5b5ee37e04893322",
+      "browser_download_url": "https://github.com/chuanK6/LL-Remote/releases/download/v0.1.14/LLRemote-Portable-x64-0.1.14.zip",
+      "anonymousDownloadHttpStatus": 200
+    },
+    {
+      "name": "LLRemote-Portable-x64-0.1.14.zip.sha256.txt",
+      "label": "便携ZIP的SHA-256校验值",
+      "size": 100,
+      "digest": "sha256:29fc47598b0496a5fd2db06483d264d09b7dace1803795756f480cbeff2154e9",
+      "browser_download_url": "https://github.com/chuanK6/LL-Remote/releases/download/v0.1.14/LLRemote-Portable-x64-0.1.14.zip.sha256.txt",
+      "anonymousDownloadHttpStatus": 200
+    },
+    {
+      "name": "LLRemote-0.1.14-release-notes.md",
+      "label": "本版解决的问题及保留Data的升级步骤",
+      "size": 3935,
+      "digest": "sha256:b7930a0f77bfe29340a6fd9e7901c7d50a4842e37127d61c1adf63d777757ee1",
+      "browser_download_url": "https://github.com/chuanK6/LL-Remote/releases/download/v0.1.14/LLRemote-0.1.14-release-notes.md",
+      "anonymousDownloadHttpStatus": 200
+    }
+  ],
+  "downloadExcludesPersonalData": true,
+  "upgradeGuidanceAudience": "Downloading users",
+  "anonymousDownloadsVerified": true,
+  "publishedAtUtc": "2026-11-24T14:28:59Z",
+  "latestStableRelease": true,
+  "oldPublicReleasesUnchanged": true,
+  "oldPublicTags": [
+    "v0.1.13",
+    "v0.1.12"
+  ],
+  "downloadSha256": "5dd7a4648134a49b3abe8634997b07fc05f8e0058f50c8af5b5ee37e04893322",
+  "emptyArchiveData": true,
+  "sameExecutableAsUserAccepted": true
+}

@@ -209,8 +209,12 @@
   "publication": {
     "channel": "GitHub Releases",
     "releaseUrl": "https://github.com/chuanK6/LL-Remote/releases/tag/v0.1.14",
-    "releaseNotes": "docs/releases/0.1.14.md",
-    "status": "Package preparation snapshot; publication receipt will be recorded in the repository after upload"
+    "publishedAtUtc": "2026-11-24T14:28:59Z",
+    "sourceCommit": "15024f872e00857e50010497c2cc6787414a14e5",
+    "downloadSha256": "5dd7a4648134a49b3abe8634997b07fc05f8e0058f50c8af5b5ee37e04893322",
+    "anonymousDownloadsVerified": true,
+    "oldPublicReleasesUnchanged": true,
+    "receipt": "docs/releases/0.1.14-publication.json"
   },
   "upgradeGuidance": {
     "audience": "Downloading users",
@@ -219,5 +223,6 @@
     "sameComputerAndWindowsUser": "Existing configuration, saved access and pairing can be reused without reconfiguration",
     "differentComputerOrWindowsUser": "DPAPI-protected credentials require reauthentication",
     "personalDataPublished": false
-  }
+  },
+  "githubPublished": true
 }
