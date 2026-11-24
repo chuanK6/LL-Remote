@@ -47,13 +47,16 @@
   "pendingUserChecks": [
     "Actual application interaction with the additional wallpaper cleanup; real dual-computer and clean Windows matrices not rerun"
   ],
-  "githubPublished": false,
+  "githubPublished": true,
   "delivery": {
     "directory": ".work/github-release-0.1.13/LLRemote-Portable-x64-0.1.13",
     "archive": "LLRemote-Portable-x64-0.1.13.zip",
     "sha256File": "LLRemote-Portable-x64-0.1.13.zip.sha256.txt",
     "emptyData": true,
-    "executableSha256": "8fcbb42b77377ba0f7f25c5ad5fb806cc1acb5d9a0651a2b1920f7e785e726be"
+    "executableSha256": "8fcbb42b77377ba0f7f25c5ad5fb806cc1acb5d9a0651a2b1920f7e785e726be",
+    "bytes": 182029177,
+    "sha256": "d86f985ea9aa43fe16cef8b8962c2653fa2a16803bd90342631b4982455dffa5",
+    "localDirectory": "release/LLRemote-Portable-x64-0.1.13"
   },
   "oldVersionPreserved": {
     "version": "0.1.12",
@@ -95,6 +98,43 @@
     "userFilesAllHashesUnchanged": true,
     "originalProgramsAndZipBackedUpLocally": true,
     "resourceVerificationPassed": true,
-    "zip": "Updated from the final clean release archive"
-  }
+    "zip": "Updated from the final clean release archive",
+    "zipUpdated": true
+  },
+  "githubRelease": {
+    "published": true,
+    "releaseId": 456471189,
+    "releaseUrl": "https://github.com/chuanK6/LL-Remote/releases/tag/v0.1.13",
+    "tag": "v0.1.13",
+    "sourceCommit": "4ef0a9aadef4a6858719d0d3c3b8d85a9cfdd2bb",
+    "assets": [
+      {
+        "name": "LLRemote-Portable-x64-0.1.13.zip",
+        "size": 182029177,
+        "digest": "sha256:d86f985ea9aa43fe16cef8b8962c2653fa2a16803bd90342631b4982455dffa5",
+        "browser_download_url": "https://github.com/chuanK6/LL-Remote/releases/download/v0.1.13/LLRemote-Portable-x64-0.1.13.zip",
+        "anonymousDownloadHttpStatus": 200
+      },
+      {
+        "name": "LLRemote-Portable-x64-0.1.13.zip.sha256.txt",
+        "size": 100,
+        "digest": "sha256:91d29c711a463ef7c11acebc64a8e2b6e633680650fcf2578f3c4acefd6c7326",
+        "browser_download_url": "https://github.com/chuanK6/LL-Remote/releases/download/v0.1.13/LLRemote-Portable-x64-0.1.13.zip.sha256.txt",
+        "anonymousDownloadHttpStatus": 200
+      }
+    ],
+    "localPackageUpdatedByUserRequest": true,
+    "old012Preserved": true,
+    "downloadExcludesPersonalData": true,
+    "anonymousDownloadsVerified": true,
+    "publishedAt": "2026-11-24T08:19:45Z",
+    "date": "2026-11-24"
+  },
+  "archiveVerification": {
+    "zipCrcPassed": true,
+    "allArchivedFilesMatchedStage": true,
+    "extractedResourcesVerified": true,
+    "emptyData": true
+  },
+  "packagedValidationSnapshotBeforePublication": true
 }
