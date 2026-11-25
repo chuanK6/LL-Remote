@@ -2,7 +2,7 @@
   "version": "0.1.15",
   "date": "2026-11-25",
   "timezone": "Asia/Shanghai",
-  "status": "User-accepted implementation; 0.1.15 local release ready for GitHub publication",
+  "status": "Published 0.1.15; user-accepted implementation, version rebuild and current public downloads verified",
   "previousImplementationRecord": "docs/validation/0.1.14-thumbnail-layout-fix.json",
   "userAcceptance": {
     "confirmed": true,
@@ -56,14 +56,14 @@
   "engineTestsExecuted": false,
   "userDataModified": false,
   "publicationAuthorized": true,
-  "githubPublished": false,
+  "githubPublished": true,
   "attachmentNaming": "Original English filenames with empty custom labels",
   "delivery": {
     "previousDirectory": "release/LLRemote-Portable-x64-0.1.14",
     "directory": "release/LLRemote-Portable-x64-0.1.15",
     "archive": "release/LLRemote-Portable-x64-0.1.15.zip",
     "temporaryRoot": ".work/package-current",
-    "temporaryArtifactsRemoved": false,
+    "temporaryArtifactsRemoved": true,
     "localDirectoryRenamed": true,
     "localExecutableUpdated": true,
     "localArchiveUpdated": true,
@@ -74,6 +74,29 @@
     "archiveData": "Empty Data; independent clean package",
     "preservedDataAndConfigurationFiles": 399,
     "allPreservedFileHashesUnchanged": true,
-    "archiveReceipt": "docs/validation/0.1.15-archive-receipt.json"
+    "archiveReceipt": "docs/validation/0.1.15-archive-receipt.json",
+    "preservationVerificationScope": "Hashes compared immediately before and after local directory rename/program replacement; later user/runtime/cache activity is not restored or overwritten",
+    "postDeliveryObservation": {
+      "changedMissingOrBusyPreservedFiles": 45,
+      "categories": {
+        "Data/accounts": 2,
+        "Data/engines": 2,
+        "Data/WebView2": 41
+      },
+      "readOnly": true,
+      "filesRestoredOrOverwritten": false
+    },
+    "temporaryPathsAreHistorical": true,
+    "cleanupRecord": "docs/validation/0.1.15-cleanup.json",
+    "completedAt": "2026-11-25T17:23:08+08:00"
+  },
+  "publication": {
+    "channel": "GitHub Releases",
+    "releaseUrl": "https://github.com/chuanK6/LL-Remote/releases/tag/v0.1.15",
+    "tag": "v0.1.15",
+    "sourceCommit": "430eea987d255a17f76f90798b35c92d94cc9b83",
+    "receipt": "docs/releases/0.1.15-publication.json",
+    "anonymousDownloadsVerified": true,
+    "oldVersionVerificationSkippedAtUserRequest": true
   }
 }

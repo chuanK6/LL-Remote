@@ -18,6 +18,8 @@
   "preservedDataAndConfigurationFiles": 399,
   "allPreservedFileHashesUnchanged": true,
   "oldLocalProgramNotesAndArchiveRetired": true,
-  "temporaryArtifactsRemoved": false,
-  "runtimeTestsExecuted": false
+  "temporaryArtifactsRemoved": true,
+  "runtimeTestsExecuted": false,
+  "temporaryPathsAreHistorical": true,
+  "cleanupRecord": "docs/validation/0.1.15-cleanup.json"
 }

@@ -1,0 +1,84 @@
+{
+  "published": true,
+  "version": "0.1.15",
+  "date": "2026-11-25",
+  "timezone": "Asia/Shanghai",
+  "releaseId": 457870292,
+  "releaseUrl": "https://github.com/chuanK6/LL-Remote/releases/tag/v0.1.15",
+  "tag": "v0.1.15",
+  "sourceCommit": "430eea987d255a17f76f90798b35c92d94cc9b83",
+  "sourcePushed": true,
+  "publishedAtUtc": "2026-11-25T09:10:53Z",
+  "assets": [
+    {
+      "id": 790847223,
+      "name": "LLRemote-0.1.15-release-notes.md",
+      "label": "",
+      "size": 2404,
+      "digest": "sha256:5f8ce324b7ea5b17bd276236b15d70424bb5bbe2e1403c9a3929d3b5f60cbb88",
+      "browser_download_url": "https://github.com/chuanK6/LL-Remote/releases/download/v0.1.15/LLRemote-0.1.15-release-notes.md"
+    },
+    {
+      "id": 790841961,
+      "name": "LLRemote-Portable-x64-0.1.15.zip",
+      "label": "",
+      "size": 182127792,
+      "digest": "sha256:0ddbedf9a889e801912f500e1931b69859066930296b4f9b8f73fd49a4f97ef9",
+      "browser_download_url": "https://github.com/chuanK6/LL-Remote/releases/download/v0.1.15/LLRemote-Portable-x64-0.1.15.zip"
+    },
+    {
+      "id": 790845894,
+      "name": "LLRemote-Portable-x64-0.1.15.zip.sha256.txt",
+      "label": "",
+      "size": 100,
+      "digest": "sha256:4671313b7dea159b40f6a149979fecc9872c83bae150c2065b2b1d1776a8c3a9",
+      "browser_download_url": "https://github.com/chuanK6/LL-Remote/releases/download/v0.1.15/LLRemote-Portable-x64-0.1.15.zip.sha256.txt"
+    }
+  ],
+  "attachmentNamesOriginal": true,
+  "customLabelsEmpty": true,
+  "downloadExcludesPersonalData": true,
+  "emptyArchiveData": true,
+  "executableSha256": "b53112d5d6d65e26ddddbe4afbd52aa7b56e55f3a8e801ea5cc6163a0d9ccc5b",
+  "sameFunctionalCodeAsUserAccepted": true,
+  "sameExecutableBytesAsUserAccepted": false,
+  "runtimeTestsRerun": false,
+  "userAcceptance": {
+    "confirmed": true,
+    "date": "2026-11-25",
+    "source": "User message in this workspace",
+    "quote": "功能测试通过，可以上传GitHub，版本改为0.1.15，整理一下，release文件夹也要改一下版本号",
+    "acceptedImplementation": "Corrected 0.1.14 thumbnail/navigation candidate",
+    "acceptedExecutableSha256": "f939042ac7ff456974607c7e32f2c7e676bcb71e423ca404d1f7bb540c47e21a",
+    "perScenarioMatrixSupplied": false
+  },
+  "anonymousDownloadsVerified": true,
+  "temporaryUploadDirectoryRemoved": true,
+  "oldVersionVerificationSkippedAtUserRequest": true,
+  "downloadUrlRefresh": "Read current public asset metadata after publishing; draft untagged URLs are historical",
+  "publicDownloadVerification": [
+    {
+      "name": "LLRemote-0.1.15-release-notes.md",
+      "bytes": 2404,
+      "sha256": "5f8ce324b7ea5b17bd276236b15d70424bb5bbe2e1403c9a3929d3b5f60cbb88",
+      "matchesFinalLocalFile": true
+    },
+    {
+      "name": "LLRemote-Portable-x64-0.1.15.zip",
+      "bytes": 182127792,
+      "sha256": "0ddbedf9a889e801912f500e1931b69859066930296b4f9b8f73fd49a4f97ef9",
+      "matchesFinalLocalFile": true
+    },
+    {
+      "name": "LLRemote-Portable-x64-0.1.15.zip.sha256.txt",
+      "bytes": 100,
+      "sha256": "4671313b7dea159b40f6a149979fecc9872c83bae150c2065b2b1d1776a8c3a9",
+      "matchesFinalLocalFile": true
+    }
+  ],
+  "tagPointsToSourceCommit": true,
+  "verificationCompletedAt": "2026-11-25T17:20:03+08:00",
+  "verificationScope": "Only v0.1.15 attachments and source tag; old versions skipped at user request",
+  "cleanupRecord": "docs/validation/0.1.15-cleanup.json",
+  "personalDataAndConfigurationPreservedAtProgramReplacement": true
+}
