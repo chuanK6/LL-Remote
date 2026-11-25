@@ -45,6 +45,7 @@ docs/releases/0.1.14-preparation.json
 docs/releases/0.1.14-publication-2026-11-24.json
 docs/releases/0.1.14-publication.json
 docs/releases/0.1.14-wallpaper-preparation.json
+docs/releases/0.1.14-wallpaper-publication.json
 docs/releases/0.1.14-wallpaper-reconnect.md
 docs/releases/0.1.14-working-release-notes.md
 docs/releases/0.1.14.md

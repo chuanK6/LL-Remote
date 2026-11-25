@@ -3,7 +3,7 @@
   "revision": "wallpaper-reconnect-2026-11-25",
   "date": "2026-11-25",
   "timezone": "Asia/Shanghai",
-  "status": "Accepted by user on 2026-11-25; GitHub update authorized",
+  "status": "Accepted by user and published to GitHub v0.1.14 on 2026-11-25",
   "rootCause": "Native directory IDs changed across offline/reconnect. Read-only local data inspection found two same-name account profiles with different native IDs: the old unverified row still referenced an existing wallpaper, while the newer verified row did not.",
   "changes": [
     "Persist a separate accountHostName so Sunshine names, display names and code connection source cannot replace directory continuity metadata",
@@ -51,7 +51,7 @@
     "perScenarioMatrixSupplied": false
   },
   "historicalAcceptance": "The 2026-11-24 user confirmation and GitHub publication apply to the original executable and do not validate this revision",
-  "githubPublished": false,
+  "githubPublished": true,
   "delivery": {
     "localDirectory": "release/LLRemote-Portable-x64-0.1.14",
     "localArchive": "release/LLRemote-Portable-x64-0.1.14.zip",
@@ -67,7 +67,9 @@
     "temporaryPathsAreHistorical": true,
     "cleanupRecord": "docs/validation/delivery-cleanup-2026-11-25.json",
     "publicationReceipt": "docs/releases/0.1.14-wallpaper-publication.json",
-    "zipSha256": "65e499bda364a6d25492d800fc5da5cb03d38e31aec8c8c5a226c17615d7fb89"
+    "zipSha256": "65e499bda364a6d25492d800fc5da5cb03d38e31aec8c8c5a226c17615d7fb89",
+    "publicDownloadFilesVerified": true,
+    "protectedDataAndConfigHashesUnchanged": true
   },
   "publicationAuthorized": true,
   "attachmentNaming": "Keep original asset filenames; clear custom Chinese labels",
@@ -78,5 +80,8 @@
     "documentsUpdated": true,
     "bundleAndZipChecked": true,
     "testsRerun": false
-  }
+  },
+  "sourceCommit": "120724102ce1953233ed94e7f606616ebc51a50a",
+  "publicationReceipt": "docs/releases/0.1.14-wallpaper-publication.json",
+  "anonymousDownloadsVerified": true
 }

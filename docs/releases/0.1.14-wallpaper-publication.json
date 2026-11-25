@@ -1,0 +1,73 @@
+{
+  "published": true,
+  "updatedSameVersion": true,
+  "version": "0.1.14",
+  "date": "2026-11-25",
+  "timezone": "Asia/Shanghai",
+  "releaseId": 456875940,
+  "releaseUrl": "https://github.com/chuanK6/LL-Remote/releases/tag/v0.1.14",
+  "tag": "v0.1.14",
+  "sourceCommit": "120724102ce1953233ed94e7f606616ebc51a50a",
+  "tagObjectSha": "066990416ec45c495f508826bc462e7c7a8ae230",
+  "assets": [
+    {
+      "id": 789890973,
+      "name": "LLRemote-0.1.14-release-notes.md",
+      "label": "",
+      "size": 4924,
+      "digest": "sha256:8cde2cbcc30c8ac8c299b91b9ab4b8f999637b6747ab3d1cc1ea80f7383038d9",
+      "browser_download_url": "https://github.com/chuanK6/LL-Remote/releases/download/v0.1.14/LLRemote-0.1.14-release-notes.md"
+    },
+    {
+      "id": 789886806,
+      "name": "LLRemote-Portable-x64-0.1.14.zip",
+      "label": "",
+      "size": 181649526,
+      "digest": "sha256:65e499bda364a6d25492d800fc5da5cb03d38e31aec8c8c5a226c17615d7fb89",
+      "browser_download_url": "https://github.com/chuanK6/LL-Remote/releases/download/v0.1.14/LLRemote-Portable-x64-0.1.14.zip"
+    },
+    {
+      "id": 789890000,
+      "name": "LLRemote-Portable-x64-0.1.14.zip.sha256.txt",
+      "label": "",
+      "size": 100,
+      "digest": "sha256:3d7bd741e31ecb6572dd3d44c4787cd6b6c26b821938bee1b6318795bcd55a78",
+      "browser_download_url": "https://github.com/chuanK6/LL-Remote/releases/download/v0.1.14/LLRemote-Portable-x64-0.1.14.zip.sha256.txt"
+    }
+  ],
+  "downloadSha256": "65e499bda364a6d25492d800fc5da5cb03d38e31aec8c8c5a226c17615d7fb89",
+  "executableSha256": "66b1952bc8f87e532da5c4700833845736e0f0e8e18fee193334578757c3d57e",
+  "sameExecutableAsUserAccepted": true,
+  "userAcceptance": {
+    "date": "2026-11-25",
+    "source": "User",
+    "feedback": "测试之后，功能正常，可以提交GitHub，更新资源和文件，版本还是0.1.14",
+    "perScenarioMatrixSupplied": false
+  },
+  "attachmentNamesOriginal": true,
+  "customLabelsCleared": true,
+  "emptyArchiveData": true,
+  "downloadExcludesPersonalData": true,
+  "sourcePushed": true,
+  "publishedAtUtc": "2026-11-24T14:28:59Z",
+  "updatedAtUtc": "2026-11-25T03:32:09Z",
+  "applicationUnitAndEngineTestsRerun": false,
+  "anonymousDownloadsVerified": true,
+  "oldPublicReleasesAndTagsUnchanged": true,
+  "temporaryUploadDirectoryRemoved": true,
+  "verificationStatus": "Complete: original filenames, empty labels, full ZIP bytes/SHA-256 and public text downloads verified",
+  "publicZipVerification": {
+    "expectedBytes": 181649526,
+    "downloadedBytes": 181649526,
+    "downloadedSha256": "65e499bda364a6d25492d800fc5da5cb03d38e31aec8c8c5a226c17615d7fb89"
+  },
+  "downloadVerificationRetry": "First ZIP download digest mismatched; subsequent full canonical download with identity encoding and byte-count verification matched the uploaded file",
+  "cleanup": {
+    "path": ".work/package-current",
+    "removedBytes": 712226330,
+    "removedFiles": 1634,
+    "protectedDataAndConfigFiles": 386,
+    "protectedHashesUnchanged": true,
+    "releaseExecutableAndZipUnchanged": true
+  }
+}

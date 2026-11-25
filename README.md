@@ -12,7 +12,7 @@
 
 应用下载：[0.1.14 发布页](https://github.com/chuanK6/LL-Remote/releases/tag/v0.1.14) · [Windows x64 便携版 ZIP](https://github.com/chuanK6/LL-Remote/releases/download/v0.1.14/LLRemote-Portable-x64-0.1.14.zip) · [SHA-256 校验文件](https://github.com/chuanK6/LL-Remote/releases/download/v0.1.14/LLRemote-Portable-x64-0.1.14.zip.sha256.txt)。公开下载包不包含发布者的本机 Data 和配置。旧版 [0.1.12 发布页](https://github.com/chuanK6/LL-Remote/releases/tag/v0.1.12) 保留。 旧版 [0.1.13 发布页](https://github.com/chuanK6/LL-Remote/releases/tag/v0.1.13) 也保留。
 
-0.1.14 于 2026-11-25 追加壁纸重连修复：目录 ID 变化后衔接原设备资料，同设备在线详情、多条连接记录详情及收藏共用壁纸，修改任一入口全部更新。用户测试后确认功能正常，授权更新同版本 GitHub 源码及附件；沿用验收 EXE，不重新运行测试。见 [本轮说明](docs/releases/0.1.14-wallpaper-reconnect.md)、[验证记录](docs/validation/0.1.14-wallpaper-reconnect.json) 和 [完整发布说明](docs/releases/0.1.14.md)。附件保留原始文件名，不设置中文显示名称。0.1.13 的壁纸修复、5 MB 上限、默认托盘及 1 Mbps 步长继续保留。[更新日志](CHANGELOG.md)
+0.1.14 于 2026-11-25 追加壁纸重连修复：目录 ID 变化后衔接原设备资料，同设备在线详情、多条连接记录详情及收藏共用壁纸，修改任一入口全部更新。用户测试后确认功能正常，同版本 GitHub 源码及附件已更新；沿用验收 EXE，不重新运行测试。见 [本轮说明](docs/releases/0.1.14-wallpaper-reconnect.md)、[验证记录](docs/validation/0.1.14-wallpaper-reconnect.json)、[发布回执](docs/releases/0.1.14-wallpaper-publication.json) 和 [完整发布说明](docs/releases/0.1.14.md)。附件保留原始文件名，不设置中文显示名称。0.1.13 的壁纸修复、5 MB 上限、默认托盘及 1 Mbps 步长继续保留。[更新日志](CHANGELOG.md)
 
 0.1.14 原候选收到移动 Data 后重建旧版目录、全屏连接不显示悬浮球的反馈。修正版启动时更新随包 Sunshine 的旧绝对路径，调整悬浮球创建及显示，性能监测默认关闭且关闭时不创建窗口。新连接默认窗口模式，会话内切换全屏及内部重连继续可用；最新版本已有用户当前测试无问题的确认。
 
