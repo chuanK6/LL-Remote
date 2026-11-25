@@ -1,0 +1,82 @@
+{
+  "version": "0.1.14",
+  "revision": "wallpaper-reconnect-2026-11-25",
+  "date": "2026-11-25",
+  "timezone": "Asia/Shanghai",
+  "status": "Accepted by user on 2026-11-25; GitHub update authorized",
+  "rootCause": "Native directory IDs changed across offline/reconnect. Read-only local data inspection found two same-name account profiles with different native IDs: the old unverified row still referenced an existing wallpaper, while the newer verified row did not.",
+  "changes": [
+    "Persist a separate accountHostName so Sunshine names, display names and code connection source cannot replace directory continuity metadata",
+    "Reconcile the complete current-account directory using unique names only when the old native ID is not owned by another live row, existing identity is not bound to another directory name and candidate confirmed UUIDs do not conflict",
+    "Retain the canonical profile ID, wallpaper, favorites and settings; rebind every affected history deviceId",
+    "Keep saved Sunshine UUID as the expected identity checked before connecting; directory names are continuity hints rather than verified host identity",
+    "Online, history and favorite details read and edit the same Device.wallpaper; histories do not store independent wallpapers or create hosts"
+  ],
+  "checks": {
+    "frontendBuild": {
+      "command": "npm run build",
+      "passed": true
+    },
+    "rustCheck": {
+      "command": "npm run rust:check",
+      "passed": true
+    },
+    "regressionCompilation": {
+      "command": "node scripts/cargo.mjs check --tests --manifest-path src-tauri/Cargo.toml",
+      "passed": true,
+      "testsExecuted": false
+    },
+    "nativeReleaseBuild": {
+      "command": "node scripts/tauri.mjs build --no-bundle --config src-tauri/tauri.release.conf.json",
+      "passed": true
+    },
+    "portableBundleVerification": {
+      "command": "python scripts/verify-bundle.py .work/wallpaper-reconnect-0.1.14/LLRemote-Portable-x64-0.1.14 --reference . --require-clean-data",
+      "passed": true,
+      "checkedNativeBinaries": 138,
+      "resourceFilesCompared": 1597,
+      "missingDependencies": 0,
+      "bundledWebView2Binaries": 0
+    }
+  },
+  "regressionCasesAdded": 5,
+  "unitTestsExecuted": false,
+  "desktopTestsExecuted": false,
+  "engineTestsExecuted": false,
+  "userDataModified": false,
+  "userRuntimeAcceptance": {
+    "date": "2026-11-25",
+    "source": "User",
+    "feedback": "测试之后，功能正常，可以提交GitHub，更新资源和文件，版本还是0.1.14",
+    "perScenarioMatrixSupplied": false
+  },
+  "historicalAcceptance": "The 2026-11-24 user confirmation and GitHub publication apply to the original executable and do not validate this revision",
+  "githubPublished": false,
+  "delivery": {
+    "localDirectory": "release/LLRemote-Portable-x64-0.1.14",
+    "localArchive": "release/LLRemote-Portable-x64-0.1.14.zip",
+    "cleanPackagingDirectory": ".work/package-current/LLRemote-Portable-x64-0.1.14",
+    "previousProgramAndArchiveBackup": ".work/wallpaper-reconnect-0.1.14/previous-delivery",
+    "executableSha256": "66b1952bc8f87e532da5c4700833845736e0f0e8e18fee193334578757c3d57e",
+    "localExecutableUpdated": true,
+    "preservedDataAndConfigurationFiles": 386,
+    "allPreservedFileHashesUnchanged": true,
+    "archiveReceipt": "docs/validation/0.1.14-wallpaper-archive-receipt.json",
+    "archiveData": "Empty Data; archived from independent clean packaging directory",
+    "temporaryArtifactsRemoved": true,
+    "temporaryPathsAreHistorical": true,
+    "cleanupRecord": "docs/validation/delivery-cleanup-2026-11-25.json",
+    "publicationReceipt": "docs/releases/0.1.14-wallpaper-publication.json",
+    "zipSha256": "65e499bda364a6d25492d800fc5da5cb03d38e31aec8c8c5a226c17615d7fb89"
+  },
+  "publicationAuthorized": true,
+  "attachmentNaming": "Keep original asset filenames; clear custom Chinese labels",
+  "publicationPreparation": "docs/releases/0.1.14-wallpaper-preparation.json",
+  "releaseRepackaging": {
+    "date": "2026-11-25",
+    "sameUserAcceptedExecutable": true,
+    "documentsUpdated": true,
+    "bundleAndZipChecked": true,
+    "testsRerun": false
+  }
+}

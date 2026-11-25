@@ -1,0 +1,114 @@
+{
+    "date":  "2026-11-25",
+    "timezone":  "Asia/Shanghai",
+    "authorization":  "User requested cleanup of delivery copies outside release after compilation or GitHub upload",
+    "status":  "Complete",
+    "plannedDirectories":  [
+                               ".work\\archive-0.1.13-9ce09c43-0794-43a6-ac8b-562a8df97089",
+                               ".work\\archive-0.1.13-deda8808-32e2-4b31-bdc4-6e0877260c44",
+                               ".work\\archive-0.1.14-4078ae0b-7dfb-40a3-841e-94c7b9405441",
+                               ".work\\before-device-login-update-37e720bd318d4b3cb47e67e601a009f0",
+                               ".work\\before-overlay-update-0138385a4e624947b3a0ad3a6bd1bd74",
+                               ".work\\fix-0.1.14",
+                               ".work\\github-release-0.1.13",
+                               ".work\\github-release-0.1.14",
+                               ".work\\github-release-assets",
+                               ".work\\history-0.1.14",
+                               ".work\\history-delete-0.1.14",
+                               ".work\\previous-local-0.1.13-300bbcb9-4b61-4a8a-9b49-069ca08b36ca",
+                               ".work\\previous-local-0.1.14-0f0c6404-8459-4431-8d50-acc99ba40260",
+                               ".work\\previous-local-0.1.14-2c901e9d-01de-45c8-b781-1da1fb37a146",
+                               ".work\\previous-local-0.1.14-505aa084-6cff-41c6-9176-6638368c72b6",
+                               ".work\\wallpaper-reconnect-0.1.14"
+                           ],
+    "preservedPublicationReceipts":  "docs/releases",
+    "preservedArchiveReceipt":  "docs/validation/0.1.14-wallpaper-archive-receipt.json",
+    "releaseFilesBefore":  2011,
+    "removedDirectories":  [
+                               {
+                                   "path":  ".work\\archive-0.1.13-9ce09c43-0794-43a6-ac8b-562a8df97089",
+                                   "files":  1621,
+                                   "bytes":  348558059
+                               },
+                               {
+                                   "path":  ".work\\archive-0.1.13-deda8808-32e2-4b31-bdc4-6e0877260c44",
+                                   "files":  1621,
+                                   "bytes":  348545794
+                               },
+                               {
+                                   "path":  ".work\\archive-0.1.14-4078ae0b-7dfb-40a3-841e-94c7b9405441",
+                                   "files":  1621,
+                                   "bytes":  348727194
+                               },
+                               {
+                                   "path":  ".work\\before-device-login-update-37e720bd318d4b3cb47e67e601a009f0",
+                                   "files":  2,
+                                   "bytes":  4370
+                               },
+                               {
+                                   "path":  ".work\\before-overlay-update-0138385a4e624947b3a0ad3a6bd1bd74",
+                                   "files":  3,
+                                   "bytes":  55113534
+                               },
+                               {
+                                   "path":  ".work\\fix-0.1.14",
+                                   "files":  1623,
+                                   "bytes":  530879903
+                               },
+                               {
+                                   "path":  ".work\\github-release-0.1.13",
+                                   "files":  1626,
+                                   "bytes":  530591029
+                               },
+                               {
+                                   "path":  ".work\\github-release-0.1.14",
+                                   "files":  1629,
+                                   "bytes":  530944342
+                               },
+                               {
+                                   "path":  ".work\\github-release-assets",
+                                   "files":  7,
+                                   "bytes":  182150915
+                               },
+                               {
+                                   "path":  ".work\\history-0.1.14",
+                                   "files":  1623,
+                                   "bytes":  530892569
+                               },
+                               {
+                                   "path":  ".work\\history-delete-0.1.14",
+                                   "files":  1623,
+                                   "bytes":  530917006
+                               },
+                               {
+                                   "path":  ".work\\previous-local-0.1.13-300bbcb9-4b61-4a8a-9b49-069ca08b36ca",
+                                   "files":  1623,
+                                   "bytes":  530568771
+                               },
+                               {
+                                   "path":  ".work\\previous-local-0.1.14-0f0c6404-8459-4431-8d50-acc99ba40260",
+                                   "files":  6,
+                                   "bytes":  196569818
+                               },
+                               {
+                                   "path":  ".work\\previous-local-0.1.14-2c901e9d-01de-45c8-b781-1da1fb37a146",
+                                   "files":  6,
+                                   "bytes":  196631079
+                               },
+                               {
+                                   "path":  ".work\\previous-local-0.1.14-505aa084-6cff-41c6-9176-6638368c72b6",
+                                   "files":  6,
+                                   "bytes":  196640979
+                               },
+                               {
+                                   "path":  ".work\\wallpaper-reconnect-0.1.14",
+                                   "files":  1633,
+                                   "bytes":  727202562
+                               }
+                           ],
+    "removedDirectoryCount":  16,
+    "removedBytes":  5784937924,
+    "releaseFilesVerifiedUnchanged":  2011,
+    "userDataModified":  false,
+    "sourceAndToolsModifiedByCleanup":  false
+}

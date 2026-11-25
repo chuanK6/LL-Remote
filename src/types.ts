@@ -27,6 +27,7 @@ export interface Account {
 export interface PublishedApp { id: string; name: string }
 export interface Device {
   id: string; hostName: string; displayName: string; source: string; natId: string | null
+  accountHostName?: string | null
   uuid: string | null; address: string | null; peerCode: string | null
   status: string; networkConnected: boolean; accountOnline?: boolean; serviceReady: boolean | null; observedAt: string | null; lastConnectedAt: string | null
   favorite: boolean; note: string; wallpaper: string | null; credentialRef: string | null

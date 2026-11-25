@@ -1,6 +1,10 @@
 # LL远程 AI 接手指南
 
-适用快照：2026-11-24，源码/发布软件 0.1.14，用户反馈当前测试无问题并授权发布，运行验收由用户完成。0.1.13 已发布并有用户功能通过确认及壁纸清理定向记录。
+适用快照：2026-11-25，源码为 0.1.14 壁纸重连修正版，用户测试后确认功能正常并授权更新 GitHub 同版本源码/附件。沿用验收 EXE，不重新编译或运行测试，只更新交付文档与 ZIP；发布回执记录最终结果。附件保留原始文件名，清空中文 label。0.1.13 已发布并有用户功能通过确认及壁纸清理定向记录。
+
+2026-11-25 壁纸修正：皎月连目录 ID 随主机离线重启变化，未取得 Sunshine UUID 的旧在线资料无法通过原身份规则衔接新 ID。本机只读数据检查发现旧条目仍有壁纸及图片、新已确认条目没有壁纸。`Runtime::refresh` 先构造完整在线目录，再调用 `Store::merge_account_directory`。独立保存 `Device.account_host_name`，避免 Sunshine 名称、昵称或 code 来源覆盖目录名称；旧 account 条目使用原 host_name 作迁移候选。仅在目录名称唯一、旧 ID 不属于另一在线行、已有身份没有指向其他目录名称且候选 UUID 无冲突时衔接，并交给原合并函数保留资料与重绑全部历史。已保存 UUID 始终保留为连接时的预期身份；目录名称用于资料连续性，不作为已确认主机身份。同名歧义/UUID 冲突保持独立。
+
+壁纸只存在设备资料中。在线详情、历史详情和收藏详情均通过 `DevicePage.vue` / `DeviceEditor.vue` 按当前 deviceId 读写同一资料；历史不保存独立壁纸或创建设备。识别码连接确认同一 UUID 后继续共用该资料。新增五项回归用例覆盖未确认 ID 变化、历史/收藏共享修改及恢复默认、旧重复资料衔接、同名/UUID 冲突和目录名称独立性；只做编译，不运行用例、桌面或内核。用户随后自行测试并确认功能正常，未提供逐项矩阵，授权更新同版本 GitHub。详见 [壁纸重连修正记录](validation/0.1.14-wallpaper-reconnect.json)。保留个人 Data、配置、配对；不得将用户一般反馈扩展为自动化或全部环境通过。
 
 0.1.14 角色切换位于 `src-tauri/src/runtime/role_switch.rs`，作为 runtime 子模块保存逻辑会话暂停记录及仅存在内存中的清零凭据。`automaticRoleSwitch` 默认 false。地址在连接前检查；同账号地址只能连接后确认时，结束本次客户端组网并在同一会话中重建一次。`resolve_role_switch` 仅允许主窗口针对当前待确认会话作决定，批准后持久化选项，拒绝不暂停本机服务。前端弹窗在 `RoleSwitchDialog.vue`，固定描述由 `src/role-switch.ts` 与设置页共用。
 
@@ -73,7 +77,7 @@
 
 便携 Data 内还包含各内核配置、设备/历史数据、日志、壁纸和加密凭据。具体文件路径以 `runtime.rs`、`storage.rs` 和运行日志为准。账号密码与历史连接密码由 Windows DPAPI 保存，普通 JSON 保存凭据引用；更换电脑或 Windows 用户后通常需要重新认证。
 
-在读日志或制作报告时，不输出密码、PIN、令牌、私钥和完整账号配置。清理、升级或打包时保留用户 Data、根目录 `config`、已有配对和备份。故障日志应保留数值错误码和时间线，避免把中文显示乱码误当成数值证据。
+在读日志或制作报告时，不输出密码、PIN、令牌、私钥和完整账号配置。清理、升级或打包时保留用户 Data、根目录 `config` 和已有配对；程序/ZIP 的临时备份按 11-25 新规则在交付完成后删除。故障日志应保留数值错误码和时间线，避免把中文显示乱码误当成数值证据。
 
 ## 4. 开发环境与常用命令
 
@@ -153,17 +157,19 @@ Windows 自动 Block 规则可能覆盖 Allow 规则。不要用关闭整个防�
 
 ## 8. 正确构建和交付
 
+日常运行入口为 `release/LLRemote-Portable-x64-0.1.14/LLRemote.exe`，11-25 壁纸修正的 EXE 和 ZIP 已同步到 release；用户无需从 `.work` 启动。release 的实际使用目录包含个人 Data，所以干净打包脚本拒绝直接覆盖该输出目录；这项检查只约束打包，不限制运行程序。用户 11-25 新规定：release 以外的临时交付目录、ZIP 和程序备份在编译/包校验完成并同步 release 后删除，GitHub 上传材料在上传后删除，不等待功能验收、不长期保留旧副本。旧目录不再写入，现状与本轮清理见 [目录与备份盘点](0.1.14目录与备份盘点.md)。
+
 已保留内核和宿主、只改 LL 代码时，可执行：
 
 ```powershell
 node scripts/tauri.mjs build --no-bundle --config src-tauri/tauri.release.conf.json
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package.ps1 -Portable
-python scripts/verify-bundle.py release/LLRemote-Portable-x64-0.1.14 --reference . --require-clean-data
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package.ps1 -Portable -OutputRoot .work/package-current
+python scripts/verify-bundle.py .work/package-current/LLRemote-Portable-x64-0.1.14 --reference . --require-clean-data
 ```
 
 示例校验路径对应当前版本；升级后换成新版本目录。`package.ps1` 从 `package.json` 读取版本，直接使用 `src-tauri/target/release/LLRemote.exe` 等资源，要求扩展清单和 UTF-8 Sunshine 标记正确。先构建再打包，避免把旧 EXE 当作新改动交付。
 
-同版本本机目录已经运行过时，可使用 `-OutputRoot .work/github-release-0.1.13` 生成独立干净目录；输出必须位于工作区内。最终包与源码提交对应，ZIP 和 SHA-256 上传到该版本 GitHub Releases。功能测试来自用户确认与定向文件回归，不能扩展为跨电脑或干净系统全部通过。
+同版本本机目录已经运行过时，使用 `-OutputRoot .work/package-current` 生成独立干净目录；不要复用早期任务目录。先校验并把最终 EXE/ZIP/校验文件同步回 release，保存验证及发布回执到当前 docs，然后运行 `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/clean-delivery.ps1 -TemporaryPaths .work/package-current -Execute` 删除临时输出。需要 GitHub 上传时，在上传确认成功后执行该清理。最终包与源码提交对应；功能测试来自用户确认与定向文件回归，不能扩展为跨电脑或干净系统全部通过。
 
 打包脚本生成完整便携目录，不会自动刷新同名 ZIP。需要压缩交付时，另行生成 ZIP，解压到隔离目录并验证；交付包 Data 必须为空，运行资源不能含用户配置、日志或私钥。同名输出已有用户 Data 时脚本会拒绝覆盖，应保留原目录并使用明确的新输出，不能删除用户数据绕过检查。
 

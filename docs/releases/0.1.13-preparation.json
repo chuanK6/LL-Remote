@@ -1,0 +1,25 @@
+{
+  "archive": "E:\\LL Remote\\.work\\github-release-0.1.13\\LLRemote-Portable-x64-0.1.13.zip",
+  "bytes": 182029177,
+  "sha256": "d86f985ea9aa43fe16cef8b8962c2653fa2a16803bd90342631b4982455dffa5",
+  "zipCrcPassed": true,
+  "allArchivedFilesMatchedStage": true,
+  "extractedResourcesVerified": true,
+  "emptyData": true,
+  "resources": {
+    "checkedNativeBinaries": 138,
+    "bundledWebView2Binaries": 0,
+    "webview2Delivery": "system-evergreen",
+    "nestedQtPluginsChecked": true,
+    "pinnedComponentHashesMatch": true,
+    "resourceFilesCompared": 1597,
+    "nsisBundleMarkerAccepted": false,
+    "missingDependencies": 0,
+    "systemBaseline": "Current local Windows; clean Windows acceptance deferred"
+  },
+  "oldFilesPreserved": 3594,
+  "downloadSha256": "d86f985ea9aa43fe16cef8b8962c2653fa2a16803bd90342631b4982455dffa5",
+  "crcPassed": true,
+  "local0.1.13UpdatedByUserRequest": true,
+  "old0.1.12Preserved": true
+}

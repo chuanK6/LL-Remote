@@ -1,0 +1,29 @@
+{
+  "published": true,
+  "releaseId": 455534869,
+  "releaseUrl": "https://github.com/chuanK6/LL-Remote/releases/tag/v0.1.12",
+  "tag": "v0.1.12",
+  "sourceCommit": "0751eba6b2d101c484381a03e835d73d9ac6a844",
+  "assets": [
+    {
+      "name": "LLRemote-Portable-x64-0.1.12.zip",
+      "size": 182140651,
+      "digest": "sha256:eeb1df198cf0f8debd3a0996f59da05105864648be1fb9761605c0d2c81fa663",
+      "browser_download_url": "https://github.com/chuanK6/LL-Remote/releases/download/v0.1.12/LLRemote-Portable-x64-0.1.12.zip"
+    },
+    {
+      "name": "LLRemote-Portable-x64-0.1.12.zip.sha256.txt",
+      "size": 100,
+      "digest": "sha256:e82ca2d32ce96a51921e1ca34df4175bf37a1213a77a45567d5197ad06fcff64",
+      "browser_download_url": "https://github.com/chuanK6/LL-Remote/releases/download/v0.1.12/LLRemote-Portable-x64-0.1.12.zip.sha256.txt"
+    }
+  ],
+  "originalLocalZipUnchanged": true,
+  "downloadExcludesPersonalData": true,
+  "publicMetadataVerified": true,
+  "publishedAt": "2026-11-23T14:28:22Z",
+  "anonymousDownloadsVerified": true,
+  "zipAnonymousHttpStatus": 200,
+  "zipPublicContentLength": 182140651,
+  "publicChecksumContentMatches": true
+}

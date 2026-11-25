@@ -1,0 +1,40 @@
+{
+  "version": "0.1.14",
+  "emptyData": true,
+  "crcPassed": true,
+  "allArchivedFilesMatchedStage": true,
+  "acceptedExecutableUnchanged": true,
+  "acceptedExecutableSha256": "18590301eea36d50d7d4704f397a4e90c057d3eda6edbab235e6404519c0abe2",
+  "downloadSha256": "5dd7a4648134a49b3abe8634997b07fc05f8e0058f50c8af5b5ee37e04893322",
+  "bytes": 182121916,
+  "resources": {
+    "checkedNativeBinaries": 138,
+    "bundledWebView2Binaries": 0,
+    "webview2Delivery": "system-evergreen",
+    "nestedQtPluginsChecked": true,
+    "pinnedComponentHashesMatch": true,
+    "resourceFilesCompared": 1597,
+    "nsisBundleMarkerAccepted": false,
+    "missingDependencies": 0,
+    "systemBaseline": "Current local Windows; clean Windows acceptance deferred"
+  },
+  "personalDataPublished": false,
+  "upgradeGuidanceForDownloadingUsers": true,
+  "files": [
+    {
+      "name": "LLRemote-Portable-x64-0.1.14.zip",
+      "bytes": 182121916,
+      "sha256": "5dd7a4648134a49b3abe8634997b07fc05f8e0058f50c8af5b5ee37e04893322"
+    },
+    {
+      "name": "LLRemote-Portable-x64-0.1.14.zip.sha256.txt",
+      "bytes": 100,
+      "sha256": "29fc47598b0496a5fd2db06483d264d09b7dace1803795756f480cbeff2154e9"
+    },
+    {
+      "name": "LLRemote-0.1.14-release-notes.md",
+      "bytes": 3935,
+      "sha256": "b7930a0f77bfe29340a6fd9e7901c7d50a4842e37127d61c1adf63d777757ee1"
+    }
+  ]
+}

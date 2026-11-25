@@ -300,6 +300,159 @@ fn confirming_both_native_ids_merges_cached_and_online_rows_without_losing_edits
     );
 }
 
+fn account_directory_device(nat_id: &str, name: &str, uuid: Option<&str>) -> Device {
+    Device {
+        nat_id: Some(nat_id.into()),
+        account_host_name: Some(name.into()),
+        host_name: name.into(),
+        display_name: name.into(),
+        uuid: uuid.map(str::to_owned),
+        source: "account".into(),
+        status: "online".into(),
+        observed_at: Some("2026-11-25T12:00:00Z".into()),
+        ..Device::default()
+    }
+}
+
+fn saved_device_history(id: &str, device_id: &str) -> HistoryEntry {
+    HistoryEntry {
+        id: id.into(), device_id: Some(device_id.into()), peer_code: None,
+        connected_at: "2026-11-25T11:00:00Z".into(), method: "同账号".into(),
+        result: "success".into(), error_code: None,
+    }
+}
+
+#[test]
+fn account_reconnect_preserves_wallpaper_and_all_history_and_favorite_views_share_edits() {
+    let (_root, mut store, source) = wallpaper_fixture();
+    let saved = &mut store.account_data.devices[0];
+    saved.source = "account".into();
+    saved.nat_id = Some("old-directory-id".into());
+    saved.host_name = "Desktop".into();
+    saved.favorite = true;
+    for index in 0..3 {
+        store.account_data.history.push(saved_device_history(&format!("history-{index}"), "device"));
+    }
+    let original = store.device("device").unwrap().wallpaper.unwrap();
+    store.merge_account_directory(Vec::new());
+    assert!(!store.device("device").unwrap().account_online);
+    store.merge_account_directory(vec![account_directory_device("new-directory-id", "Desktop", None)]);
+    assert_eq!(store.account_data.devices.len(), 1);
+    let saved = store.device("device").unwrap();
+    assert!(saved.account_online && saved.favorite);
+    assert_eq!(saved.wallpaper.as_deref(), Some(original.as_str()));
+    assert!(store.root.join(&original).exists());
+    store.save_devices().unwrap();
+    let mut store = Store::open(store.root.clone()).unwrap();
+    store.switch_account(Some("wallpaper-account")).unwrap();
+    store.merge_account_directory(vec![account_directory_device("third-directory-id", "Desktop", Some("host-uuid"))]);
+    let mut edit = wallpaper_edit(Some(&source), false);
+    edit.favorite = true;
+    store.edit_device(&edit).unwrap();
+    let replacement = store.device("device").unwrap().wallpaper.unwrap();
+    assert_ne!(original, replacement);
+    assert!(!store.root.join(&original).exists());
+    assert_eq!(store.account_data.devices.iter().filter(|device| device.favorite).count(), 1);
+    for entry in &store.account_data.history {
+        let device = store.device(entry.device_id.as_deref().unwrap()).unwrap();
+        assert_eq!(device.id, "device");
+        assert_eq!(device.wallpaper.as_deref(), Some(replacement.as_str()));
+    }
+    edit.wallpaper_path = None;
+    edit.reset_wallpaper = true;
+    store.edit_device(&edit).unwrap();
+    for entry in &store.account_data.history {
+        assert!(store.device(entry.device_id.as_deref().unwrap()).unwrap().wallpaper.is_none());
+    }
+    assert!(store.device("device").unwrap().favorite);
+}
+
+#[test]
+fn account_directory_recovers_wallpaper_from_old_unverified_profile_and_rebinds_history() {
+    let (_root, mut store, _source) = wallpaper_fixture();
+    let saved = &mut store.account_data.devices[0];
+    saved.source = "account".into();
+    saved.nat_id = Some("old-id".into());
+    saved.host_name = "Desktop".into();
+    saved.favorite = true;
+    let wallpaper = saved.wallpaper.clone();
+    let mut confirmed = account_directory_device("current-id", "Desktop", Some("confirmed-host"));
+    confirmed.id = "confirmed-device".into();
+    confirmed.credential_ref = Some("saved-credential".into());
+    confirmed.credential_state = "valid".into();
+    store.account_data.devices.push(confirmed);
+    for id in ["device", "confirmed-device"] {
+        store.account_data.history.push(saved_device_history(&format!("history-{id}"), id));
+    }
+    store.merge_account_directory(vec![account_directory_device("current-id", "Desktop", None)]);
+    assert_eq!(store.account_data.devices.len(), 1);
+    let saved = store.device("confirmed-device").unwrap();
+    assert_eq!(saved.wallpaper, wallpaper);
+    assert!(saved.favorite && saved.account_online);
+    assert_eq!(saved.uuid.as_deref(), Some("confirmed-host"));
+    assert_eq!(saved.credential_ref.as_deref(), Some("saved-credential"));
+    assert!(store.account_data.history.iter().all(|entry| entry.device_id.as_deref() == Some("confirmed-device")));
+}
+
+#[test]
+fn account_directory_keeps_ambiguous_names_and_conflicting_uuids_separate() {
+    let (_root, mut store, _source) = wallpaper_fixture();
+    let saved = &mut store.account_data.devices[0];
+    saved.source = "account".into();
+    saved.nat_id = Some("old-id".into());
+    saved.host_name = "Desktop".into();
+    store.merge_account_directory(vec![
+        account_directory_device("first-id", "Desktop", None),
+        account_directory_device("second-id", "Desktop", None),
+    ]);
+    assert_eq!(store.account_data.devices.len(), 3);
+    assert!(!store.device("device").unwrap().account_online);
+    assert!(store.account_data.devices.iter().filter(|device| device.account_online).all(|device| device.wallpaper.is_none()));
+
+    store.account_data.devices.retain(|device| device.id == "device");
+    store.account_data.devices[0].uuid = Some("original-host".into());
+    store.merge_account_directory(vec![account_directory_device("other-id", "Desktop", Some("other-host"))]);
+    assert_eq!(store.account_data.devices.len(), 2);
+    assert_eq!(store.device("device").unwrap().uuid.as_deref(), Some("original-host"));
+    assert!(store.device("device").unwrap().wallpaper.is_some());
+    assert!(store.account_data.devices.iter().find(|device| device.account_online).unwrap().wallpaper.is_none());
+}
+
+#[test]
+fn account_directory_does_not_take_profile_from_another_live_native_id() {
+    let (_root, mut store, _source) = wallpaper_fixture();
+    let saved = &mut store.account_data.devices[0];
+    saved.source = "account".into();
+    saved.nat_id = Some("old-id".into());
+    saved.host_name = "Desktop".into();
+    store.merge_account_directory(vec![
+        account_directory_device("new-id", "Desktop", None),
+        account_directory_device("old-id", "Renamed desktop", None),
+    ]);
+    assert_eq!(store.account_data.devices.len(), 2);
+    assert!(store.device("device").unwrap().wallpaper.is_some());
+    assert!(store.account_data.devices.iter().find(|device| device.nat_id.as_deref() == Some("new-id")).unwrap().wallpaper.is_none());
+}
+
+#[test]
+fn account_directory_name_continuity_survives_sunshine_name_and_connection_source_changes() {
+    let (_root, mut store, _source) = wallpaper_fixture();
+    let saved = &mut store.account_data.devices[0];
+    saved.source = "code".into();
+    saved.nat_id = Some("old-id".into());
+    saved.account_host_name = Some("Directory name".into());
+    saved.host_name = "Sunshine name".into();
+    saved.uuid = Some("confirmed-host".into());
+    saved.peer_code = Some("12345678".into());
+    store.merge_account_directory(vec![account_directory_device("new-id", "Directory name", None)]);
+    assert_eq!(store.account_data.devices.len(), 1);
+    let saved = store.device("device").unwrap();
+    assert_eq!(saved.host_name, "Sunshine name");
+    assert_eq!(saved.uuid.as_deref(), Some("confirmed-host"));
+    assert_eq!(saved.peer_code.as_deref(), Some("12345678"));
+    assert!(saved.wallpaper.is_some() && saved.account_online);
+}
+
 #[test]
 fn repeated_connections_with_new_native_ids_update_one_confirmed_device() {
     let root = tempfile::tempdir().unwrap();

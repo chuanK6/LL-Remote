@@ -1,0 +1,17 @@
+{
+  "version": "0.1.12",
+  "sourceZipPreserved": true,
+  "originalSha256": "28ce21bce010ff0ae62cb6e08ef477314cfebb18c2665bd4222eb193f7077a79",
+  "downloadZip": "E:\\LL Remote\\.work\\github-release-assets\\LLRemote-Portable-x64-0.1.12.zip",
+  "downloadBytes": 182140651,
+  "downloadSha256": "eeb1df198cf0f8debd3a0996f59da05105864648be1fb9761605c0d2c81fa663",
+  "removedPersonalFiles": 348,
+  "programFilesMatchedToExistingStage": 1621,
+  "utf8NamesRestored": [
+    "LLRemote-Portable-x64-0.1.12/docs/开发与验收记录.md",
+    "LLRemote-Portable-x64-0.1.12/docs/虚拟网卡创建故障排查.md",
+    "LLRemote-Portable-x64-0.1.12/docs/连接流程与组网地址.md"
+  ],
+  "emptyData": true,
+  "crcPassed": true
+}

@@ -6,11 +6,13 @@
 
 版本管理：[Git 上传清单](docs/Git上传清单.md)。源码、配置、文档和脚本上传；本机 Data、SDK、依赖、内核资源、构建与交付产物由 `.gitignore` 排除，克隆后的资源恢复步骤见清单。
 
+交付目录规则（2026-11-25）：最终程序与 ZIP 保留在 `release/`；其余临时交付目录和程序备份在编译、校验并同步 release 后删除，GitHub 上传材料上传完成后删除。临时打包统一用 `.work/package-current/`，不再向早期任务目录写新文件；源码、工具、用户数据及诊断证据继续保留。详见 [目录盘点与清理](docs/0.1.14目录与备份盘点.md)。
+
 源码仓库：[chuanK6/LL-Remote](https://github.com/chuanK6/LL-Remote)，主分支 `main`。
 
 应用下载：[0.1.14 发布页](https://github.com/chuanK6/LL-Remote/releases/tag/v0.1.14) · [Windows x64 便携版 ZIP](https://github.com/chuanK6/LL-Remote/releases/download/v0.1.14/LLRemote-Portable-x64-0.1.14.zip) · [SHA-256 校验文件](https://github.com/chuanK6/LL-Remote/releases/download/v0.1.14/LLRemote-Portable-x64-0.1.14.zip.sha256.txt)。公开下载包不包含发布者的本机 Data 和配置。旧版 [0.1.12 发布页](https://github.com/chuanK6/LL-Remote/releases/tag/v0.1.12) 保留。 旧版 [0.1.13 发布页](https://github.com/chuanK6/LL-Remote/releases/tag/v0.1.13) 也保留。
 
-当前源码及便携版为 0.1.14，用户已反馈「目前测试没有问题」并授权发布。新增自动切换角色、独立连接记录及收藏卡片、直接硬删除，修复旧 Data 路径和悬浮窗口显示；完整变更和升级步骤见 [0.1.14 发布说明](docs/releases/0.1.14.md)。0.1.13 的壁纸修复、5 MB 上限、默认托盘及 1 Mbps 步长继续保留。[更新日志](CHANGELOG.md)
+0.1.14 于 2026-11-25 追加壁纸重连修复：目录 ID 变化后衔接原设备资料，同设备在线详情、多条连接记录详情及收藏共用壁纸，修改任一入口全部更新。用户测试后确认功能正常，授权更新同版本 GitHub 源码及附件；沿用验收 EXE，不重新运行测试。见 [本轮说明](docs/releases/0.1.14-wallpaper-reconnect.md)、[验证记录](docs/validation/0.1.14-wallpaper-reconnect.json) 和 [完整发布说明](docs/releases/0.1.14.md)。附件保留原始文件名，不设置中文显示名称。0.1.13 的壁纸修复、5 MB 上限、默认托盘及 1 Mbps 步长继续保留。[更新日志](CHANGELOG.md)
 
 0.1.14 原候选收到移动 Data 后重建旧版目录、全屏连接不显示悬浮球的反馈。修正版启动时更新随包 Sunshine 的旧绝对路径，调整悬浮球创建及显示，性能监测默认关闭且关闭时不创建窗口。新连接默认窗口模式，会话内切换全屏及内部重连继续可用；最新版本已有用户当前测试无问题的确认。
 
@@ -90,6 +92,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package.ps1 -Portabl
 `prepare-engines.ps1` 从文档给定的 `E:\kongping` 复制运行资源，排除原配置、日志与私钥；它应在 Moonlight 扩展构建之前执行。`prepare-runtime.ps1` 只准备内核的 MSVC 依赖。交付打包要求空 Data，并在复制前过滤内核配置、日志和私钥；已有用户数据目录不会被覆盖。
 
 便携目录的数据放在程序旁 `Data`，WebView2 缓存也随该数据目录保存。壁纸保存相对路径。DPAPI 凭据绑定 Windows 用户与电脑，更换用户或电脑需要重新认证。
+
+设备壁纸属于设备资料，同设备的在线详情、全部连接记录详情和收藏详情共用；在任一详情页更换或恢复默认并保存后，其他详情页一起更新。目录名称唯一且已确认身份无冲突时，同账号设备离线重连的目录 ID 变化会衔接原资料。同名歧义保持独立，避免串用其他电脑的资料。
 
 壁纸支持 PNG、JPEG、WebP，单张上传上限为 5 MB（5 × 1024 × 1024 字节，等于上限允许）。预览和正式保存均校验大小；超限图片不会替换已选壁纸。保存后的图片经后端路径校验并授权本地资源读取。
 

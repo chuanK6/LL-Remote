@@ -229,7 +229,65 @@ impl Store {
         }
         Ok(true)
     }
-    pub fn merge_device(&mut self, mut incoming: Device) -> String {
+    pub fn merge_account_directory(&mut self, directory: Vec<Device>) {
+        for device in &mut self.account_data.devices {
+            device.account_online = false;
+            if device.source == "account" {
+                device.status = "offline".into();
+                device.service_ready = None;
+            }
+        }
+        for incoming in &directory {
+            let name = incoming.account_host_name.as_deref().unwrap_or("").trim();
+            let unique_name = incoming.source == "account" && !name.is_empty()
+                && directory.iter().filter(|device| {
+                    device.account_host_name.as_deref()
+                        .is_some_and(|value| value.trim().eq_ignore_ascii_case(name))
+                }).count() == 1;
+            let identity_has_other_name = self.account_data.devices.iter().any(|device| {
+                device.same_host(incoming) && device.account_host_name.as_deref()
+                    .is_some_and(|value| !value.trim().eq_ignore_ascii_case(name))
+            });
+            let candidates: Vec<&Device> = self.account_data.devices.iter().filter(|device| {
+                let saved_name = device.account_host_name.as_deref().or_else(|| {
+                    // Older account profiles predate the separate directory name.
+                    (device.source == "account").then_some(device.host_name.as_str())
+                });
+                unique_name && !identity_has_other_name
+                    && saved_name.is_some_and(|value| value.trim().eq_ignore_ascii_case(name))
+                    && !directory.iter().any(|other| {
+                        other.id != incoming.id && device.nat_id.as_deref()
+                            .zip(other.nat_id.as_deref())
+                            .is_some_and(|(saved, online)| saved.eq_ignore_ascii_case(online))
+                    })
+            }).collect();
+            let uuids: HashSet<String> = candidates.iter().copied()
+                .chain(self.account_data.devices.iter().filter(|device| device.same_host(incoming)))
+                .chain(std::iter::once(incoming))
+                .filter_map(|device| device.uuid.as_deref())
+                .map(|uuid| uuid.trim().to_ascii_lowercase())
+                .filter(|uuid| !uuid.is_empty()).collect();
+            // Native directory IDs change when a host restarts. Continue a unique
+            // account directory name only when no other live row owns the old ID
+            // and no confirmed Sunshine identities conflict. A saved UUID remains
+            // the expected identity checked by resolve_address before connecting.
+            let additional_ids: Vec<String> = if uuids.len() <= 1 {
+                candidates.iter().map(|device| device.id.clone()).collect()
+            } else {
+                Vec::new()
+            };
+            let id = self.merge_device_with_matches(incoming.clone(), &additional_ids);
+            if let Some(device) = self.account_data.devices.iter_mut().find(|device| device.id == id) {
+                device.account_online = true;
+            }
+        }
+    }
+
+    pub fn merge_device(&mut self, incoming: Device) -> String {
+        self.merge_device_with_matches(incoming, &[])
+    }
+
+    fn merge_device_with_matches(&mut self, mut incoming: Device, additional_ids: &[String]) -> String {
         for identifier in [
             &mut incoming.nat_id,
             &mut incoming.uuid,
@@ -244,7 +302,7 @@ impl Store {
             .account_data
             .devices
             .iter()
-            .filter(|d| d.same_host(&incoming))
+            .filter(|d| d.same_host(&incoming) || additional_ids.contains(&d.id))
             .cloned()
             .collect();
         let known_uuids: HashSet<String> = matches
@@ -420,6 +478,7 @@ impl Store {
                 }
             }
             current.nat_id = latest.nat_id.or(incoming.nat_id).or(current.nat_id);
+            current.account_host_name = incoming.account_host_name.or(current.account_host_name);
             current.uuid = incoming.uuid.or(current.uuid);
             current.address = latest.address.or(incoming.address).or(current.address);
             current.peer_code = latest

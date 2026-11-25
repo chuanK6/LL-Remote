@@ -770,22 +770,17 @@ impl Runtime {
                         store.preferences.moonlight_imported = true;
                         store.save_preferences()?;
                     }
-                    for device in &mut store.account_data.devices {
-                        device.account_online = false;
-                        if device.source == "account" {
-                            device.status = "offline".into();
-                            device.service_ready = None;
-                        }
-                    }
+                    let mut directory = Vec::new();
                     for host in hosts.into_iter().filter(|host| host.online) {
                         let info = verified.as_ref().filter(|(id, _)| id == &host.id).map(|(_, info)| info);
-                        let name = info.map_or(host.name, |info| info.name.clone());
+                        let name = info.map_or_else(|| host.name.clone(), |info| info.name.clone());
                         let device = Device {
                             host_name: name.clone(),
                             display_name: name,
                             source: "account".into(),
                             uuid: info.map(|info| info.uuid.clone()),
                             nat_id: Some(host.id),
+                            account_host_name: Some(host.name),
                             address: host.address,
                             status: "online".into(),
                             service_ready: host.service_ready,
@@ -793,18 +788,9 @@ impl Runtime {
                             preferences: store.preferences.stream.clone(),
                             ..Device::default()
                         };
-                        let id = store.merge_device(device);
-                        if let Some(device) = store
-                            .account_data
-                            .devices
-                            .iter_mut()
-                            .find(|device| device.id == id)
-                        {
-                            // Directory membership is independent of saved connection
-                            // source: the same account host may also have a peer code.
-                            device.account_online = true;
-                        }
+                        directory.push(device);
                     }
+                    store.merge_account_directory(directory);
                     store.save_devices()?;
                 } else {
                     for device in &mut store.account_data.devices {

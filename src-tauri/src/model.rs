@@ -277,6 +277,8 @@ pub struct Device {
     pub display_name: String,
     pub source: String,
     pub nat_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub account_host_name: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub known_nat_ids: Vec<String>,
     pub uuid: Option<String>,
@@ -307,6 +309,7 @@ impl Default for Device {
             display_name: String::new(),
             source: "existing".into(),
             nat_id: None,
+            account_host_name: None,
             known_nat_ids: Vec::new(),
             uuid: None,
             address: None,

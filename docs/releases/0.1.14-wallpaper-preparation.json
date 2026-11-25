@@ -1,0 +1,19 @@
+{
+  "version": "0.1.14",
+  "revision": "wallpaper-reconnect-2026-11-25",
+  "date": "2026-11-25",
+  "userAcceptedExecutableSha256": "66b1952bc8f87e532da5c4700833845736e0f0e8e18fee193334578757c3d57e",
+  "sameExecutableAsUserAccepted": true,
+  "zipSha256": "65e499bda364a6d25492d800fc5da5cb03d38e31aec8c8c5a226c17615d7fb89",
+  "zipBytes": 181649526,
+  "crcPassed": true,
+  "emptyData": true,
+  "noRootConfig": true,
+  "attachmentNames": [
+    "LLRemote-Portable-x64-0.1.14.zip",
+    "LLRemote-Portable-x64-0.1.14.zip.sha256.txt",
+    "LLRemote-0.1.14-release-notes.md"
+  ],
+  "attachmentLabels": "Empty; display original filenames",
+  "applicationAndUnitTestsRerun": false
+}

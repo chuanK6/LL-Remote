@@ -3,7 +3,7 @@
   "date": "2026-11-24",
   "timezone": "Asia/Shanghai",
   "platform": "Windows x64",
-  "scope": "Previously compiled and packaged application accepted by user; release preparation updates documentation and clean distribution only, without rerunning application/unit/engine tests",
+  "scope": "Historical 2026-11-24 release validation, with latest accepted 2026-11-25 wallpaper revision recorded separately",
   "changes": [
     "Optional role switching only when active local acceptance IP matches target IP",
     "Main-only modal when disabled: requested description, light-blue enable and light-red stop",
@@ -224,5 +224,11 @@
     "differentComputerOrWindowsUser": "DPAPI-protected credentials require reauthentication",
     "personalDataPublished": false
   },
-  "githubPublished": true
+  "githubPublished": true,
+  "subsequentWallpaperReconnectRevision": {
+    "date": "2026-11-25",
+    "record": "docs/validation/0.1.14-wallpaper-reconnect.json",
+    "acceptance": "User tested the wallpaper revision, confirmed functionality normal and authorized same-version GitHub update on 2026-11-25; no per-scenario environment matrix supplied"
+  },
+  "latestRevisionRecord": "docs/validation/0.1.14-wallpaper-reconnect.json"
 }
