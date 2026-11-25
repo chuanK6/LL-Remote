@@ -68,7 +68,7 @@ async function submit() {
     if (!active || !saved) return
     app.apply(saved)
   }
-  await router.push(result.account.authenticated ? '/devices' : '/login')
+  await router.push(result.account.authenticated ? '/assist' : '/login')
 }
 async function authorize() {
   const result = await app.run(() => bridge.authorize(localPassword.value))

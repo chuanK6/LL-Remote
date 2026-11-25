@@ -34,7 +34,7 @@ async function confirmDelete() {
   const snapshot = await app.run(() => bridge.deleteDevice(id))
   if (!snapshot) return
   app.apply(snapshot)
-  if (route.params.id === id) await router.replace('/devices')
+  if (route.params.id === id) await router.replace('/assist')
   app.tell('已删除设备。')
 }
 </script>
@@ -66,9 +66,6 @@ async function confirmDelete() {
         </div>
         <p v-if="!devices.length" class="nav-empty">{{ app.snapshot.account.authenticated ? '暂无同账号在线设备' : '登录后查看同账号在线设备' }}</p>
       </div>
-      <button :class="['nav-button', { selected: route.name === 'devices' }]" @click="router.push('/devices')">
-        <span class="nav-symbol all-symbol" aria-hidden="true"><i/><i/><i/><i/></span>全部设备
-      </button>
     </div>
     <button class="section-title next-section section-toggle" :aria-expanded="open.assistance" aria-controls="nav-assistance" @click="open.assistance = !open.assistance">
       <ScanLine class="icon" />远程协助<ChevronUp class="chevron-icon" />

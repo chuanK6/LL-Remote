@@ -4,13 +4,15 @@
 
 项目资料：[初版总结](docs/项目总结.md) · [AI 接手指南](docs/AI接手指南.md) · [各版本处理的问题](docs/版本演进记录.md)。其他 AI 接手时先读根目录 [AGENTS.md](AGENTS.md)，再按指南定位代码与验证入口。
 
+当前版本为 **0.1.15**。移除「全部设备」入口及页面，保留设备资料；连接记录和收藏只将左侧图标替换为壁纸缩略图，保留名称、连接信息、备注和时间，修正图片覆盖整行的问题。默认进入开始协助，首次使用引导保留。用户已确认修正版功能测试通过，0.1.15 沿用验收代码、更新版本配置并重新构建；本轮不重新运行单元、网页、桌面或内核测试。见 [发布说明](docs/releases/0.1.15.md) 和 [验证记录](docs/validation/0.1.15.json)。
+
 版本管理：[Git 上传清单](docs/Git上传清单.md)。源码、配置、文档和脚本上传；本机 Data、SDK、依赖、内核资源、构建与交付产物由 `.gitignore` 排除，克隆后的资源恢复步骤见清单。
 
 交付目录规则（2026-11-25）：最终程序与 ZIP 保留在 `release/`；其余临时交付目录和程序备份在编译、校验并同步 release 后删除，GitHub 上传材料上传完成后删除。临时打包统一用 `.work/package-current/`，不再向早期任务目录写新文件；源码、工具、用户数据及诊断证据继续保留。详见 [目录盘点与清理](docs/0.1.14目录与备份盘点.md)。
 
 源码仓库：[chuanK6/LL-Remote](https://github.com/chuanK6/LL-Remote)，主分支 `main`。
 
-应用下载：[0.1.14 发布页](https://github.com/chuanK6/LL-Remote/releases/tag/v0.1.14) · [Windows x64 便携版 ZIP](https://github.com/chuanK6/LL-Remote/releases/download/v0.1.14/LLRemote-Portable-x64-0.1.14.zip) · [SHA-256 校验文件](https://github.com/chuanK6/LL-Remote/releases/download/v0.1.14/LLRemote-Portable-x64-0.1.14.zip.sha256.txt)。公开下载包不包含发布者的本机 Data 和配置。旧版 [0.1.12 发布页](https://github.com/chuanK6/LL-Remote/releases/tag/v0.1.12) 保留。 旧版 [0.1.13 发布页](https://github.com/chuanK6/LL-Remote/releases/tag/v0.1.13) 也保留。
+应用下载：[0.1.15 发布页](https://github.com/chuanK6/LL-Remote/releases/tag/v0.1.15) · [Windows x64 便携版 ZIP](https://github.com/chuanK6/LL-Remote/releases/download/v0.1.15/LLRemote-Portable-x64-0.1.15.zip) · [SHA-256 校验文件](https://github.com/chuanK6/LL-Remote/releases/download/v0.1.15/LLRemote-Portable-x64-0.1.15.zip.sha256.txt)。公开下载包不包含发布者的本机 Data 和配置。旧版 [0.1.14](https://github.com/chuanK6/LL-Remote/releases/tag/v0.1.14)、[0.1.13](https://github.com/chuanK6/LL-Remote/releases/tag/v0.1.13) 和 [0.1.12](https://github.com/chuanK6/LL-Remote/releases/tag/v0.1.12) 发布页保留。
 
 0.1.14 于 2026-11-25 追加壁纸重连修复：目录 ID 变化后衔接原设备资料，同设备在线详情、多条连接记录详情及收藏共用壁纸，修改任一入口全部更新。用户测试后确认功能正常，同版本 GitHub 源码及附件已更新；沿用验收 EXE，不重新运行测试。见 [本轮说明](docs/releases/0.1.14-wallpaper-reconnect.md)、[验证记录](docs/validation/0.1.14-wallpaper-reconnect.json)、[发布回执](docs/releases/0.1.14-wallpaper-publication.json) 和 [完整发布说明](docs/releases/0.1.14.md)。附件保留原始文件名，不设置中文显示名称。0.1.13 的壁纸修复、5 MB 上限、默认托盘及 1 Mbps 步长继续保留。[更新日志](CHANGELOG.md)
 
@@ -24,12 +26,12 @@
 
 ## 运行
 
-**升级用户请先保存旧版整个 Data 文件夹。** 从托盘「完全退出」旧版，再完整解压新版，将旧 Data 复制到新版 EXE 同级目录，替换下载包的空 Data；同机同 Windows 用户无需重新配置账号、设备、收藏、画质和配对。不要只保留 preferences.json，也不要套成 Data/Data。更换电脑或 Windows 用户时，加密凭据需要重新认证。步骤见 [升级说明](docs/releases/0.1.14.md)。
+**升级用户请先保存旧版整个 Data 文件夹。** 从托盘「完全退出」旧版，再完整解压新版，将旧 Data 复制到新版 EXE 同级目录，替换下载包的空 Data；同机同 Windows 用户无需重新配置账号、设备、收藏、画质和配对。不要只保留 preferences.json，也不要套成 Data/Data。更换电脑或 Windows 用户时，加密凭据需要重新认证。步骤见 [升级说明](docs/releases/0.1.15.md)。
 
 收藏设备和连接记录使用同一套列表卡片，悬停出现删除按钮，点击立即删除设备及其全部连接记录、收藏，不再确认。设备资料已移除的历史不在列表显示。恢复备份同步清理，默认图和其他设备共享的资料保留；升级程序仍保留用户 Data，删除仅由用户在应用内点击触发。
 0.1.14 的「我的设备」仅显示同账号在线主机；旧连接资料保留在「开始协助」下方的「连接记录」入口中。记录按时间排列为可高亮的列表卡片，进入详情后可返回列表，不显示主机在线状态。设备名右侧的五角星可直接收藏，收藏后变为黄色并提示；已有收藏、配置和配对保留。用户已确认当前测试无问题。
 
-- 完整解压 `LLRemote-Portable-x64-0.1.14.zip` 后运行 `LLRemote.exe` 并接受管理员授权。程序旁的 `Data` 保存本机数据。
+- 完整解压 `LLRemote-Portable-x64-0.1.15.zip` 后运行 `LLRemote.exe` 并接受管理员授权。程序旁的 `Data` 保存本机数据。
 - 目录包含三个内核及其依赖，界面复用系统 WebView2。系统未安装时会提示打开微软官方安装页，安装一次后可启动。
 - 首次使用创建或验证本机 Sunshine 管理账号，然后登录皎月连。已有运行内核与 Moonlight 配对优先复用。
 - 关闭主窗口默认进入托盘，可以在设置里关闭「关闭窗口进入托盘」以恢复关闭即退出。已有用户明确保存的选择继续保留。托盘的「停止本机接受控制」会暂停本次运行的被控服务。「完全退出」会关闭应用。防休眠默认开启，自启动默认关闭。
@@ -111,4 +113,4 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package.ps1 -Portabl
 
 双端组网、实际串流、独占全屏悬浮、多屏 DPI、休眠 / 合盖 / 重启和干净 Windows 安装验证尚待后续验收。首次系统驱动或已有服务的权限要求仍遵循原内核；未将 API 启动成功当成跨电脑远控验收成功。
 
-第三方许可、源码与再分发边界见 [第三方说明](notices/THIRD-PARTY-NOTICES.md)。当前未进行公开发布、代码签名或自动升级部署。
+第三方许可、源码与再分发边界见 [第三方说明](notices/THIRD-PARTY-NOTICES.md)。应用通过 GitHub Releases 分发，当前未提供代码签名或自动升级。

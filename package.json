@@ -1,6 +1,6 @@
 {
   "name": "ll-remote",
-  "version": "0.1.14",
+  "version": "0.1.15",
   "private": true,
   "type": "module",
   "description": "LL远程 · Windows 统一远程桌面",

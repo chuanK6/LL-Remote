@@ -112,7 +112,7 @@ function showHistory() { if (device.value) return router.push({ path: '/history'
     <PageHeading v-if="historyDetail" :title="record?.peerCode ? `识别码 ${record.peerCode}` : '连接记录详情'" description="此记录的设备资料已移除。连接记录仍保留，可返回列表查看其他记录。"/>
     <PageHeading v-else title="设备不存在" description="设备已移除或不属于当前账号。"/>
     <p v-if="historyDetail && record" class="setting-detail">{{ record.method }} · {{ formatTime(record.connectedAt) }}</p>
-    <button v-if="!historyDetail" class="primary" @click="router.push('/devices')">查看全部设备</button>
+    <button v-if="!historyDetail" class="primary" @click="router.push('/assist')">开始协助</button>
   </template>
 </template>
 <style scoped>

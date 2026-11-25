@@ -7,7 +7,6 @@ import { previewSnapshot } from '../../src/preview'
 import { useAppStore } from '../../src/stores/app'
 import { emptySession, type AppSnapshot, type SessionSnapshot } from '../../src/types'
 import DevicePage from '../../src/pages/DevicePage.vue'
-import DevicesPage from '../../src/pages/DevicesPage.vue'
 import ConnectionBanner from '../../src/components/ConnectionBanner.vue'
 
 vi.mock('../../src/bridge', () => ({
@@ -56,13 +55,13 @@ async function renderPage(path: string, snapshot: AppSnapshot) {
     history: createMemoryHistory(),
     routes: [
       { path: '/device/:id', component: DevicePage },
-      { path: '/devices', name: 'devices', component: DevicesPage },
+      { path: '/assist', component: { template: '<div>开始协助</div>' } },
       { path: '/pairing', component: { template: '<div>配对</div>' } },
     ],
   })
   await router.push(path)
   await router.isReady()
-  wrapper = mount(path === '/devices' ? DevicesPage : DevicePage, {
+  wrapper = mount(DevicePage, {
     global: { plugins: [pinia, router], stubs: { DeviceWallpaper: true, DeviceEditor: true } },
   })
   return { app, page: wrapper }
@@ -89,18 +88,6 @@ describe('设备网络连接状态与断开操作', () => {
     expect(page.find('[aria-label="设备连接状态"]').exists()).toBe(false)
     expect(app.busy).toBe(false)
     expect(app.disconnectingDeviceId).toBeNull()
-  })
-
-  it('列表只给实际连接的设备显示断开入口', async () => {
-    const snapshot = connectedSnapshot()
-    const { page } = await renderPage('/devices', snapshot)
-    const rows = page.findAll('tbody tr')
-
-    expect(rows[0].text()).toContain('皎月连已连接')
-    expect(rows[0].find('[aria-label="断开 大娃家 的连接"]').exists()).toBe(true)
-    expect(rows[1].text()).toContain('状态未知')
-    expect(rows[1].text()).not.toContain('皎月连已连接')
-    expect(rows[1].text()).not.toContain('断开连接')
   })
 
   it('断开失败保留真实连接状态和可重试入口', async () => {
@@ -135,11 +122,11 @@ describe('设备网络连接状态与断开操作', () => {
     const router = createRouter({
       history: createMemoryHistory(),
       routes: [
-        { path: '/devices', component: { template: '<div />' } },
+        { path: '/assist', component: { template: '<div />' } },
         { path: '/device/:id', component: { template: '<div />' } },
       ],
     })
-    await router.push('/devices')
+    await router.push('/assist')
     wrapper = mount(ConnectionBanner, { global: { plugins: [pinia, router] } })
     expect(wrapper.get('.banner-pin').text()).toBe('配对 PIN 3141')
 

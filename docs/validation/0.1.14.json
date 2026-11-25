@@ -232,5 +232,6 @@
     "published": true,
     "publicationReceipt": "docs/releases/0.1.14-wallpaper-publication.json"
   },
-  "latestRevisionRecord": "docs/validation/0.1.14-wallpaper-reconnect.json"
+  "latestRevisionRecord": "docs/validation/0.1.14-wallpaper-reconnect.json",
+  "latestSourceCandidateRecord": "docs/validation/0.1.14-thumbnail-layout-fix.json"
 }

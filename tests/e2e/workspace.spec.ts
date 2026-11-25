@@ -39,7 +39,7 @@ test('设置页和悬浮面板共用画质预设和码率滑块', async ({ page 
   await expect(page.getByRole('button', { name: '打开会话悬浮球设置' })).toBeVisible()
 })
 
-test('悬停设备可删除，确认后刷新也不恢复', async ({ page }) => {
+test('悬停设备可删除，确认后从侧栏移除', async ({ page }) => {
   await page.goto('/')
   const list = page.locator('#nav-devices')
   const device = list.getByRole('button', { name: '大娃家', exact: true })
@@ -54,8 +54,7 @@ test('悬停设备可删除，确认后刷新也不恢复', async ({ page }) => 
   await device.hover()
   await remove.click()
   await dialog.getByRole('button', { name: '删除', exact: true }).click()
-  await expect(page.getByRole('heading', { name: '全部设备', exact: true })).toBeVisible()
-  await page.getByRole('button', { name: '刷新', exact: true }).click()
+  await expect(page.getByRole('heading', { name: '开始协助', exact: true })).toBeVisible()
   await expect(device).toHaveCount(0)
 })
 
@@ -100,8 +99,8 @@ test('引导随导航收起为顶部按钮，恢复后可继续，网页不保�
   await page.getByRole('button', { name: '保存并继续' }).click()
   await expect(page.getByText('两次输入的密码不一致。', { exact: true })).toBeVisible()
   expect(await page.evaluate(() => JSON.stringify(localStorage))).not.toContain('preview-test-value')
-  await page.getByRole('button', { name: '全部设备', exact: true }).click()
-  await expect(page.getByRole('heading', { name: '全部设备', exact: true })).toBeVisible()
+  await page.getByRole('button', { name: '开始协助', exact: true }).click()
+  await expect(page.getByRole('heading', { name: '开始协助', exact: true })).toBeVisible()
   await expect(page.getByRole('button', { name: '取消向导', exact: true })).toHaveCount(0)
   await expect(page.locator('.topbar').getByRole('button', { name: '完成首次连接', exact: true })).toBeVisible()
   await page.getByRole('button', { name: 'Moonlight', exact: true }).click()

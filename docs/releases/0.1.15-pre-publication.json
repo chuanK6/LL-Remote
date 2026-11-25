@@ -1,0 +1,112 @@
+{
+  "date": "2026-11-25",
+  "timezone": "Asia/Shanghai",
+  "repository": "chuanK6/LL-Remote",
+  "releases": [
+    {
+      "id": 456875940,
+      "tag": "v0.1.14",
+      "draft": false,
+      "body": "# LL远程 0.1.14 · Windows x64 便携版\n\n首次发布日期：2026-11-24；同版本修正更新：2026-11-25。版本号保持 0.1.14。\n\n## 本版解决的问题\n\n- **同账号设备设置壁纸后，离线重连壁纸消失**：修正皎月连目录 ID 变化后原设备资料没有衔接的问题。原壁纸文件仍存在时沿用原引用，保留收藏、设置及全部连接记录。目录名称唯一、旧 ID 未被其他在线设备使用且已确认身份无冲突时衔接资料，连接继续核对已保存的 Sunshine UUID。\n- **同一设备的多个连接记录和收藏详情没有共用壁纸**：在线详情、同设备全部连接记录详情和收藏详情使用同一份设备资料。在任一入口更换壁纸或恢复默认并保存，其他入口一起更新，不把每条连接记录当作一台主机。\n\n- **两端同时接受控制、组网地址相同导致无法连接**：通用设置增加默认关闭的「自动切换角色」。地址冲突时可开启功能，暂时暂停本机接受控制后连接；远控结束并清理后至少等待 3 秒，确认没有串流进程、内部重连或客户端组网连接，再恢复本机接受控制。调整画质引起的内部重连保持暂停，手动停止本机服务或退出会撤销自动恢复。\n- **移动旧 Data 后，验证 Sunshine 账号会重新创建 0.1.12 目录**：随包 Sunshine 启动时更新旧的账号状态、应用、证书和日志绝对路径，使用新版目录中的 Data，保留已保存的账号和配对。\n- **连接后悬浮球不显示、默认全屏难以操作本机**：会话悬浮窗口复用主窗口 WebView2 环境，在界面线程创建并优先显示。新连接默认窗口模式，会话内可切换全屏，画质重连保持当前会话模式。\n- **性能监测出现在宿主屏幕右下角**：卡片改为跟随 Moonlight 客户区右下角，随窗口移动、缩放和 DPI 更新，最小化时隐藏。性能监测默认关闭，关闭时不创建卡片窗口。\n- **我的设备混入断开后的历史主机，出现很多重复名字**：「我的设备」和全部设备页仅显示当前皎月连账号目录的在线主机。在「开始协助」下方增加独立「连接记录」，按时间倒序显示可悬浮高亮的列表卡片，支持搜索、详情及返回，不显示主机在线状态。没有详细连接时间的旧资料标为「时间未记录」。\n- **收藏藏在编辑弹窗中、列表样式不一致**：设备名右侧增加五角星按钮，点击立即收藏，变为黄色并提示「已收藏设备」。收藏列表与连接记录使用相同卡片布局。\n- **删除设备后还留下连接记录或从恢复备份重新出现**：两个列表悬停显示删除按钮，点击直接删除对应主机资料、收藏及全部历史，无二次确认、无软删除。主数据和恢复备份同步清理，无其他引用的受管理连接授权和自定义图片删除；默认图、来源文件和其他设备共享的资料保留。资料已不存在的历史不再显示。\n\n继续保留 0.1.13 的壁纸显示修复、单张图片最大 5 MB、恢复/更换图片后的旧副本清理、默认关闭到托盘及码率按钮每次 1 Mbps。\n\n## 升级前请保存 Data\n\n1. 从旧版托盘菜单选择「完全退出」。关闭窗口默认只进入托盘，不能代替完全退出。\n2. **先保存旧版程序旁完整的 `Data` 文件夹**，建议复制一份备份。不要只保存 `preferences.json`，设备记录、收藏、账号授权和配对等资料也在 Data 中。\n3. 完整解压新版便携 ZIP，将旧版 `Data` 复制到新版 `LLRemote.exe` 同级目录，替换下载包中的空 Data。目录应为 `LLRemote-Portable-x64-0.1.14/Data`，避免多套一层 `Data/Data`。\n4. 在同一台电脑、同一个 Windows 用户下运行新版，已有配置和配对可继续使用，无需重新配置；随包 Sunshine 的旧目录路径会自动调整。\n\n更换电脑或 Windows 用户时，加密凭据受 Windows DPAPI 绑定限制，需要重新认证。公开下载包的 Data 为空，不包含发布者个人数据。\n\n## 附件\n\n- `LLRemote-Portable-x64-0.1.14.zip`：完整 Windows x64 便携程序，包含三个内核及依赖，使用系统共享 WebView2。\n- `LLRemote-Portable-x64-0.1.14.zip.sha256.txt`：便携 ZIP 的 SHA-256 校验值。\n- `LLRemote-0.1.14-release-notes.md`：本版修复内容和 Data 升级步骤；压缩包内也附有升级说明。\n\n2026-11-25 用户测试后反馈「功能正常」，授权提交 GitHub 并更新同版本资源。新修正沿用用户验收的 EXE，本次只更新文档、交付 ZIP 和 GitHub 资源，不重新运行应用、自动化或内核测试。此前已完成前端与原生生产构建、便携资源和压缩包校验；用户没有提供逐项环境矩阵。\n\n附件保留上述原始文件名，不设置中文显示名称。\n",
+      "assets": [
+        {
+          "id": 789890973,
+          "name": "LLRemote-0.1.14-release-notes.md",
+          "label": "",
+          "size": 4924,
+          "digest": "sha256:8cde2cbcc30c8ac8c299b91b9ab4b8f999637b6747ab3d1cc1ea80f7383038d9"
+        },
+        {
+          "id": 789886806,
+          "name": "LLRemote-Portable-x64-0.1.14.zip",
+          "label": "",
+          "size": 181649526,
+          "digest": "sha256:65e499bda364a6d25492d800fc5da5cb03d38e31aec8c8c5a226c17615d7fb89"
+        },
+        {
+          "id": 789890000,
+          "name": "LLRemote-Portable-x64-0.1.14.zip.sha256.txt",
+          "label": "",
+          "size": 100,
+          "digest": "sha256:3d7bd741e31ecb6572dd3d44c4787cd6b6c26b821938bee1b6318795bcd55a78"
+        }
+      ]
+    },
+    {
+      "id": 456471189,
+      "tag": "v0.1.13",
+      "draft": false,
+      "body": "修复上传后壁纸无法显示的问题，并清理恢复默认或更换壁纸后不再使用的旧图片。\r\n\r\n- 壁纸保存后可正常读取；上传支持 PNG、JPEG、WebP，单张最大 5 MB。\r\n- 恢复默认或更换壁纸并点击「保存」后，删除旧自定义图片副本。取消编辑保留原图，默认图片和上传来源文件保留。历史共享图片在最后一个设备引用移除时删除。\r\n- 默认开启「关闭窗口进入托盘」，保留已有用户设置；托盘菜单可「完全退出」。\r\n- 设置页和会话悬浮面板的码率数值按钮每次调整 1 Mbps。\r\n\r\n完整解压 `LLRemote-Portable-x64-0.1.13.zip`，运行 `LLRemote.exe` 并接受管理员授权。此包包含三个内核及其依赖，使用系统共享 WebView2；Data 为空，不包含发布者的个人配置和凭据。SHA-256 校验文件一同提供，旧版 0.1.12 下载保留。\r\n\r\n原 0.1.13 功能测试由用户确认通过；追加的壁纸清理使用隔离临时文件回归。最终前端/原生生产构建和便携包资源校验通过，真实双电脑及干净系统完整矩阵未在本次执行。\r\n\r\n保留原版本的Data文件夹，可以复制到新版本继续使用，无需重新配置。\r\n",
+      "assets": [
+        {
+          "id": 786302536,
+          "name": "LLRemote-Portable-x64-0.1.13.zip",
+          "label": "",
+          "size": 182029177,
+          "digest": "sha256:d86f985ea9aa43fe16cef8b8962c2653fa2a16803bd90342631b4982455dffa5"
+        },
+        {
+          "id": 786305514,
+          "name": "LLRemote-Portable-x64-0.1.13.zip.sha256.txt",
+          "label": "",
+          "size": 100,
+          "digest": "sha256:91d29c711a463ef7c11acebc64a8e2b6e633680650fcf2578f3c4acefd6c7326"
+        }
+      ]
+    },
+    {
+      "id": 455534869,
+      "tag": "v0.1.12",
+      "draft": false,
+      "body": "LL远程 0.1.12 Windows x64 便携版，整合皎月连组网、Sunshine 被控端和 Moonlight 串流控制端。\n\n## 下载与运行\n\n下载下方的 `LLRemote-Portable-x64-0.1.12.zip`，完整解压后运行其中的 `LLRemote.exe`，按提示接受 Windows 管理员授权。首次使用完成 Sunshine 账号设置和皎月连登录。\n\n应用使用系统 Microsoft Edge WebView2 Runtime；未安装时会提示打开微软安装页。下载包不包含发布者的 Data、登录凭据、配对私钥和浏览器缓存，首次运行会创建自己的 Data。\n\n## 本版本更新\n\n- 增加“始终接受控制”，可使用已保存凭据在启动时开启服务；手动开启显示进度。\n- 连接前刷新对端状态，托盘支持断开串流或当前组网，并显示失败原因。\n- 改善窗口、全屏和无边框模式切换与窗口大小恢复。\n- 首次配对填写设备名，默认 `roth` 可修改。\n- 通用、组件常用和会话设置即时保存，调整防休眠和开机登录任务。\n\n支持同账号设备连接和识别码协助。识别码连接需要被控端提供识别码、连接密码及组网地址；首次串流需要 PIN 配对，后续复用有效证书。\n\n第三方许可证与对应 Moonlight/Sunshine 源码归档位于包内 `notices`。项目源码、使用说明和版本记录见本仓库 README 与 docs。更广泛 Windows 环境、多屏及长期运行验证将继续完善。\n\n同名 `.sha256.txt` 附件用于核对下载完整性。\n",
+      "assets": [
+        {
+          "id": 783255382,
+          "name": "LLRemote-Portable-x64-0.1.12.zip",
+          "label": "",
+          "size": 182140651,
+          "digest": "sha256:eeb1df198cf0f8debd3a0996f59da05105864648be1fb9761605c0d2c81fa663"
+        },
+        {
+          "id": 783259694,
+          "name": "LLRemote-Portable-x64-0.1.12.zip.sha256.txt",
+          "label": "",
+          "size": 100,
+          "digest": "sha256:e82ca2d32ce96a51921e1ca34df4175bf37a1213a77a45567d5197ad06fcff64"
+        }
+      ]
+    }
+  ],
+  "tags": [
+    {
+      "ref": "refs/tags/v0.1.12",
+      "node_id": "REF_kwDOV4zaXrFyZWZzL3RhZ3MvdjAuMS4xMg",
+      "url": "https://api.github.com/repos/chuanK6/LL-Remote/git/refs/tags/v0.1.12",
+      "object": {
+        "sha": "0751eba6b2d101c484381a03e835d73d9ac6a844",
+        "type": "commit",
+        "url": "https://api.github.com/repos/chuanK6/LL-Remote/git/commits/0751eba6b2d101c484381a03e835d73d9ac6a844"
+      }
+    },
+    {
+      "ref": "refs/tags/v0.1.13",
+      "node_id": "REF_kwDOV4zaXrFyZWZzL3RhZ3MvdjAuMS4xMw",
+      "url": "https://api.github.com/repos/chuanK6/LL-Remote/git/refs/tags/v0.1.13",
+      "object": {
+        "sha": "4ef0a9aadef4a6858719d0d3c3b8d85a9cfdd2bb",
+        "type": "commit",
+        "url": "https://api.github.com/repos/chuanK6/LL-Remote/git/commits/4ef0a9aadef4a6858719d0d3c3b8d85a9cfdd2bb"
+      }
+    },
+    {
+      "ref": "refs/tags/v0.1.14",
+      "node_id": "REF_kwDOV4zaXrFyZWZzL3RhZ3MvdjAuMS4xNA",
+      "url": "https://api.github.com/repos/chuanK6/LL-Remote/git/refs/tags/v0.1.14",
+      "object": {
+        "sha": "066990416ec45c495f508826bc462e7c7a8ae230",
+        "type": "tag",
+        "url": "https://api.github.com/repos/chuanK6/LL-Remote/git/tags/066990416ec45c495f508826bc462e7c7a8ae230"
+      }
+    }
+  ]
+}

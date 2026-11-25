@@ -21,7 +21,7 @@ export const useAppStore = defineStore('app', () => {
     : [])
   const busy = computed(() => connectionRequestPending.value || isConnecting(snapshot.value.session.stage) || snapshot.value.session.stage === 'streaming' || snapshot.value.session.localAcceptancePaused)
   const needsOnboarding = computed(() => !firstConnectionObserved.value && !snapshot.value.preferences.firstConnectionComplete)
-  const onboardingPath = computed(() => snapshot.value.preferences.setupComplete ? snapshot.value.account.authenticated ? '/devices' : '/login' : '/setup')
+  const onboardingPath = computed(() => snapshot.value.preferences.setupComplete ? snapshot.value.account.authenticated ? '/assist' : '/login' : '/setup')
   let initialization: Promise<void> | undefined
   let noticeTimer: ReturnType<typeof setTimeout> | undefined
   let operationGeneration = 0

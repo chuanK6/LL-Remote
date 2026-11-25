@@ -1,6 +1,10 @@
 # LL远程 AI 接手指南
 
-适用快照：2026-11-25，源码为 0.1.14 壁纸重连修正版，用户测试后确认功能正常并授权更新 GitHub 同版本源码/附件。沿用验收 EXE，不重新编译或运行测试，只更新交付文档与 ZIP；发布回执记录最终结果。附件保留原始文件名，清空中文 label。0.1.13 已发布并有用户功能通过确认及壁纸清理定向记录。
+适用快照：2026-11-25，当前源码为 0.1.15。用户确认上一轮缩略图定位修正版功能测试通过，授权上传 GitHub 并整理本机 release 的版本号。沿用验收功能代码，统一更新 npm/Tauri/Rust 与锁文件中的版本号后重新构建，不升级依赖或内核，不重新运行单元、网页、桌面或内核测试。验收来自用户且未提供逐项环境矩阵；0.1.15 重建的 EXE 与验收 EXE 字节不同。最新交付、Data 保留和发布进度见 [0.1.15 记录](validation/0.1.15.json)，升级与附件说明见 [发布说明](releases/0.1.15.md)。附件继续保留原始文件名、空 label。
+
+本次只修改 `SavedDeviceList.vue` 的两处缩略图定位样式：容器 `position: relative`，内部 `.cover-art` 重置为 `position: static; inset: auto`。共享详情页 `.cover-art` 原先的绝对定位以整个 `saved-device-item` 为范围，导致图片遮挡整行；不要只设置图片宽高而继续继承绝对定位。列表模板中的名称、方式、识别码、备注、时间、箭头和删除按钮沿用原布局。类型检查、生产构建及生成 CSS 检查通过，未启动网页、桌面或内核；运行效果待用户验收。
+
+最新界面要求已明确：移除「全部设备」入口和页面，保留设备资料。`DevicesPage.vue` 删除，`FavoritesPage.vue` 只负责收藏筛选、排序、搜索和共用卡片；「我的设备」仍通过 `onlineAccountDevices` 显示在线主机。桌面默认首页、登录完成、详情设备移除后的跳转改为 `/assist`，旧 `/devices` 只作兼容重定向；store 的 `onboardingPath` 与 router 初次导航检查同步更新，首次设置/登录继续可达。`SavedDeviceList.vue` 左侧用 `DeviceWallpaper.vue` 读取 `item.device.wallpaper`，宽窗口 116×76，窄窗口 96×64/88×60，圆角裁剪；默认图和资源授权沿用详情页组件，删除按钮及记录引用不变。已有测试仅移除失效的全部设备表格场景、更新旧导航引用；用例未运行。详见 [本轮记录](validation/0.1.14-navigation-thumbnails.json)。
 
 2026-11-25 壁纸修正：皎月连目录 ID 随主机离线重启变化，未取得 Sunshine UUID 的旧在线资料无法通过原身份规则衔接新 ID。本机只读数据检查发现旧条目仍有壁纸及图片、新已确认条目没有壁纸。`Runtime::refresh` 先构造完整在线目录，再调用 `Store::merge_account_directory`。独立保存 `Device.account_host_name`，避免 Sunshine 名称、昵称或 code 来源覆盖目录名称；旧 account 条目使用原 host_name 作迁移候选。仅在目录名称唯一、旧 ID 不属于另一在线行、已有身份没有指向其他目录名称且候选 UUID 无冲突时衔接，并交给原合并函数保留资料与重绑全部历史。已保存 UUID 始终保留为连接时的预期身份；目录名称用于资料连续性，不作为已确认主机身份。同名歧义/UUID 冲突保持独立。
 
@@ -222,7 +226,7 @@ python scripts/prepare-sources.py
 ## 11. 可以直接发给其他 AI 的接手提示
 
 ```text
-请接手当前工作区的 LL远程项目。当前源码/发布便携版 0.1.14，用户已确认当前测试无问题并授权发布；不补写未提供的逐项测试结果。0.1.13 已发布并有用户功能通过确认及壁纸清理定向记录。
+请接手当前工作区的 LL远程项目。当前源码为 0.1.15，用户已确认缩略图定位修正版功能测试通过并授权发布、整理本机 release 版本号。最新构建、包校验、个人 Data 保留、发布与清理结果见 docs/validation/0.1.15.json。0.1.15 沿用验收功能代码，仅更新版本配置并重新构建；不补写未提供的逐项测试结果。此前图片覆盖整行的问题已通过列表内定位修正解决。0.1.13、0.1.14 发布和验收记录作为历史保留。
 先阅读 AGENTS.md、docs/项目总结.md、docs/AI接手指南.md 和 docs/版本演进记录.md，
 再查看 package.json、src/bridge.ts、src/stores/app.ts、src-tauri/src/commands.rs、
 src-tauri/src/runtime.rs 和本次任务相关模块。

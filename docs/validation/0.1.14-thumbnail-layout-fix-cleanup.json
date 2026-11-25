@@ -1,0 +1,18 @@
+{
+    "version":  "0.1.14",
+    "revision":  "thumbnail-position-fix-2026-11-25",
+    "date":  "2026-11-25",
+    "timezone":  "Asia/Shanghai",
+    "command":  "scripts/clean-delivery.ps1 -TemporaryPaths .work/package-current -Execute",
+    "finalReleaseVerifiedBeforeCleanup":  true,
+    "targets":  [
+                    {
+                        "Path":  "E:\\LL Remote\\.work\\package-current",
+                        "Files":  1632,
+                        "Bytes":  531045258,
+                        "Deleted":  true
+                    }
+                ],
+    "userDataDeleted":  false,
+    "releasePreserved":  true
+}

@@ -1,0 +1,23 @@
+{
+  "version": "0.1.15",
+  "completedAt": "2026-11-25T17:06:01+08:00",
+  "timezone": "Asia/Shanghai",
+  "archive": "release/LLRemote-Portable-x64-0.1.15.zip",
+  "archiveSha256": "0ddbedf9a889e801912f500e1931b69859066930296b4f9b8f73fd49a4f97ef9",
+  "archiveBytes": 182127792,
+  "archiveFiles": 1626,
+  "archiveEntries": 1691,
+  "zipIntegrityPassed": true,
+  "zipAllFileHashesMatchCleanStage": true,
+  "zipDataEmpty": true,
+  "executableSha256": "b53112d5d6d65e26ddddbe4afbd52aa7b56e55f3a8e801ea5cc6163a0d9ccc5b",
+  "embeddedProductVersion": "0.1.15",
+  "executableMatchesLocalAndBuild": true,
+  "localDirectoryRenamed": true,
+  "localFilesUpdated": 8,
+  "preservedDataAndConfigurationFiles": 399,
+  "allPreservedFileHashesUnchanged": true,
+  "oldLocalProgramNotesAndArchiveRetired": true,
+  "temporaryArtifactsRemoved": false,
+  "runtimeTestsExecuted": false
+}

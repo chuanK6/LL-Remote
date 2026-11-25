@@ -1,0 +1,70 @@
+{
+  "version": "0.1.14",
+  "revision": "navigation-wallpaper-thumbnails-2026-11-25",
+  "date": "2026-11-25",
+  "timezone": "Asia/Shanghai",
+  "status": "Superseded: user screenshot showed wallpapers covering saved-device rows; corrected candidate recorded separately",
+  "userClarification": "Remove the All Devices navigation/page; preserve device profiles rather than deleting all stored devices",
+  "changes": [
+    "Remove All Devices sidebar entry and table page; isolate favorites in FavoritesPage.vue",
+    "Use Start Assistance as desktop default and post-login/deletion destination; redirect legacy /devices and keep initial onboarding behavior",
+    "Shared history/favorite cards show the current Device.wallpaper using the existing DeviceWallpaper component with bundled default fallback",
+    "Increase thumbnail dimensions to 116x76, with responsive 96x64 and 88x60 variants; preserve details links and hover/focus deletion behavior",
+    "Remove an obsolete table-only unit scenario and update existing navigation expectations without running tests"
+  ],
+  "frontendBuild": {
+    "command": "npm run build",
+    "passed": true,
+    "assets": [
+      "index-BEz9zkf8.css",
+      "index-DMVhCgpO.js"
+    ]
+  },
+  "nativeReleaseBuild": {
+    "command": "node scripts/tauri.mjs build --no-bundle --config src-tauri/tauri.release.conf.json",
+    "passed": true
+  },
+  "portableBundleVerification": {
+    "command": "python scripts/verify-bundle.py .work/package-current/LLRemote-Portable-x64-0.1.14 --reference . --require-clean-data",
+    "passed": true,
+    "checkedNativeBinaries": 138,
+    "resourceFilesCompared": 1597,
+    "missingDependencies": 0,
+    "bundledWebView2Binaries": 0,
+    "pinnedComponentHashesMatch": true,
+    "systemBaseline": "Current local Windows; clean Windows acceptance deferred"
+  },
+  "unitTestsExecuted": false,
+  "webInteractionTestsExecuted": false,
+  "desktopTestsExecuted": false,
+  "engineTestsExecuted": false,
+  "userDataModified": false,
+  "githubPublished": false,
+  "historicalAcceptance": "The user-accepted, published wallpaper reconnect revision does not validate this later navigation/thumbnail UI change",
+  "pendingUserAcceptance": [
+    "All Devices entry/page removed while online devices, favorites and history remain accessible",
+    "First-use/setup/login, default home and old /devices bookmarks navigate correctly",
+    "Saved/custom/default wallpaper thumbnails render on history and favorites with acceptable size and layout",
+    "Editing a device wallpaper updates its multiple history and favorite thumbnails"
+  ],
+  "delivery": {
+    "directory": "release/LLRemote-Portable-x64-0.1.14",
+    "archive": "release/LLRemote-Portable-x64-0.1.14.zip",
+    "temporaryRoot": ".work/package-current",
+    "temporaryArtifactsRemoved": true,
+    "localExecutableUpdated": true,
+    "localArchiveUpdated": true,
+    "checksum": "release/LLRemote-Portable-x64-0.1.14.zip.sha256.txt",
+    "executableSha256": "a6bcee3b0a5680775320a79ed52d6b83977f941cfb1d1a5e87edd87e5e44209f",
+    "zipSha256": "d22969b8723cb4701ab83c225aa761cc0022671b96137bc003857f34a36c0c3e",
+    "archiveData": "Empty Data; independent clean packaging directory",
+    "preservedDataAndConfigurationFiles": 389,
+    "allPreservedFileHashesUnchanged": true,
+    "archiveReceipt": "docs/validation/0.1.14-navigation-thumbnails-archive-receipt.json",
+    "temporaryPathsAreHistorical": true,
+    "cleanupRecord": "docs/validation/0.1.14-navigation-thumbnails-cleanup.json",
+    "completedAt": "2026-11-25T16:37:36+08:00"
+  },
+  "userReportedRegression": "Wallpaper image covers the complete row instead of replacing only the left computer icon",
+  "supersededBy": "docs/validation/0.1.14-thumbnail-layout-fix.json"
+}

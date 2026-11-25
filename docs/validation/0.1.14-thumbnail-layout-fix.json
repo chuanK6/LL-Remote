@@ -1,0 +1,90 @@
+{
+  "version": "0.1.14",
+  "revision": "thumbnail-position-fix-2026-11-25",
+  "date": "2026-11-25",
+  "timezone": "Asia/Shanghai",
+  "status": "Accepted by user; released implementation promoted to version 0.1.15",
+  "previousCandidateRecord": "docs/validation/0.1.14-navigation-thumbnails.json",
+  "userReportedRegression": {
+    "source": "User message and screenshot in this workspace",
+    "symptom": "Wallpaper fills each saved-device row and obscures its device name, metadata and connection time",
+    "requestedBehavior": "Replace only the left computer icon with a wallpaper thumbnail; preserve the remaining list content and layout"
+  },
+  "rootCause": "DeviceWallpaper uses cover-art, whose shared detail-page CSS sets position:absolute and inset:0. The thumbnail wrapper did not establish a containing block, so the image was positioned over the entire relative saved-device-item.",
+  "changes": [
+    "Set the saved-device-thumbnail wrapper to position:relative",
+    "Override the reused image to position:static and inset:auto inside SavedDeviceList; preserve 100% size and object-fit:cover within the bounded thumbnail",
+    "Keep the existing card grid, device name, connection method/code, note, time, arrow, detail link and deletion button",
+    "Retain custom/default wallpaper sharing and the 116x76, 96x64 and 88x60 thumbnail dimensions"
+  ],
+  "frontendBuild": {
+    "command": "npm run build (Tauri beforeBuildCommand)",
+    "passed": true,
+    "assets": [
+      "index-CKvC0r_Q.css",
+      "index-BOnAPbM5.js"
+    ]
+  },
+  "productionCssInspection": {
+    "passed": true,
+    "imagePosition": "static",
+    "imageInset": "auto",
+    "framePosition": "relative",
+    "frameWidth": "116px",
+    "frameHeight": "76px",
+    "frameOverflow": "hidden",
+    "scope": "Read generated CSS; no browser or application launched"
+  },
+  "nativeReleaseBuild": {
+    "command": "node scripts/tauri.mjs build --no-bundle --config src-tauri/tauri.release.conf.json",
+    "passed": true
+  },
+  "portableBundleVerification": {
+    "command": "python scripts/verify-bundle.py .work/package-current/LLRemote-Portable-x64-0.1.14 --reference . --require-clean-data",
+    "passed": true,
+    "checkedNativeBinaries": 138,
+    "resourceFilesCompared": 1597,
+    "missingDependencies": 0,
+    "bundledWebView2Binaries": 0,
+    "pinnedComponentHashesMatch": true,
+    "systemBaseline": "Current local Windows; clean Windows acceptance deferred"
+  },
+  "unitTestsExecuted": false,
+  "webInteractionTestsExecuted": false,
+  "desktopTestsExecuted": false,
+  "engineTestsExecuted": false,
+  "userDataModified": false,
+  "githubPublished": false,
+  "pendingUserAcceptance": [
+    "History and favorites show the wallpaper only in the left thumbnail; device names, metadata, notes and times remain visible",
+    "Custom/default/failed-load wallpapers remain bounded at normal and narrower window widths",
+    "Detail navigation, wallpaper sharing and hover/focus deletion remain usable"
+  ],
+  "delivery": {
+    "directory": "release/LLRemote-Portable-x64-0.1.14",
+    "archive": "release/LLRemote-Portable-x64-0.1.14.zip",
+    "temporaryRoot": ".work/package-current",
+    "temporaryArtifactsRemoved": true,
+    "localExecutableUpdated": true,
+    "localArchiveUpdated": true,
+    "checksum": "release/LLRemote-Portable-x64-0.1.14.zip.sha256.txt",
+    "executableSha256": "f939042ac7ff456974607c7e32f2c7e676bcb71e423ca404d1f7bb540c47e21a",
+    "zipSha256": "9939ee676d2e3dbaeeb1b03828fcd8ba51910c53d58f92a9c73c8e9c82929008",
+    "archiveData": "Empty Data; independent clean packaging directory",
+    "preservedDataAndConfigurationFiles": 390,
+    "allPreservedFileHashesUnchanged": true,
+    "archiveReceipt": "docs/validation/0.1.14-thumbnail-layout-fix-archive-receipt.json",
+    "temporaryPathsAreHistorical": true,
+    "cleanupRecord": "docs/validation/0.1.14-thumbnail-layout-fix-cleanup.json",
+    "completedAt": "2026-11-25T16:47:44+08:00"
+  },
+  "userAcceptance": {
+    "confirmed": true,
+    "date": "2026-11-25",
+    "source": "User message in this workspace",
+    "feedback": "User confirmed functional tests passed and authorized GitHub publication as 0.1.15",
+    "perScenarioMatrixSupplied": false
+  },
+  "subsequentVersionRecord": "docs/validation/0.1.15.json",
+  "pendingUserAcceptanceAreHistorical": true
+}

@@ -3,7 +3,7 @@ import { useAppStore } from './stores/app'
 import { isTauri } from '@tauri-apps/api/core'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import DevicePage from './pages/DevicePage.vue'
-import DevicesPage from './pages/DevicesPage.vue'
+import FavoritesPage from './pages/FavoritesPage.vue'
 import SetupPage from './pages/SetupPage.vue'
 import AppsPage from './pages/AppsPage.vue'
 import AssistPage from './pages/AssistPage.vue'
@@ -17,10 +17,10 @@ import PairingPage from './pages/PairingPage.vue'
 export const router = createRouter({
   history: createWebHashHistory(),
   routes: [
-    { path: '/', redirect: isTauri() ? '/devices' : '/device/preview-home' },
+    { path: '/', redirect: isTauri() ? '/assist' : '/device/preview-home' },
     { path: '/device/:id', name: 'device', component: DevicePage },
-    { path: '/devices', name: 'devices', component: DevicesPage },
-    { path: '/favorites', name: 'favorites', component: DevicesPage },
+    { path: '/devices', redirect: '/assist' },
+    { path: '/favorites', name: 'favorites', component: FavoritesPage },
     { path: '/favorites/device/:id', name: 'favorite-device', component: DevicePage },
     { path: '/setup', name: 'setup', component: SetupPage },
     { path: '/login', name: 'login', component: SetupPage },
@@ -35,7 +35,7 @@ export const router = createRouter({
     { path: '/history/:id', redirect: to => ({ path: '/history', query: { device: String(to.params.id) } }) },
     { path: '/quick-apps/:id', name: 'quick-apps', component: QuickAppsPage },
     { path: '/pairing', name: 'pairing', component: PairingPage },
-    { path: '/:pathMatch(.*)*', redirect: '/devices' },
+    { path: '/:pathMatch(.*)*', redirect: '/assist' },
   ],
 })
 let initialNavigation = true
@@ -48,5 +48,5 @@ router.beforeEach(async to => {
   const app = useAppStore()
   await app.init()
   if (generation !== navigationGeneration) return true
-  if (isTauri() && initial && to.name === 'devices' && app.needsOnboarding && app.onboardingPath !== '/devices') return app.onboardingPath
+  if (isTauri() && initial && to.name === 'assist' && app.needsOnboarding && app.onboardingPath !== '/assist') return app.onboardingPath
 })

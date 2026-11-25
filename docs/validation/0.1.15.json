@@ -1,0 +1,79 @@
+{
+  "version": "0.1.15",
+  "date": "2026-11-25",
+  "timezone": "Asia/Shanghai",
+  "status": "User-accepted implementation; 0.1.15 local release ready for GitHub publication",
+  "previousImplementationRecord": "docs/validation/0.1.14-thumbnail-layout-fix.json",
+  "userAcceptance": {
+    "confirmed": true,
+    "date": "2026-11-25",
+    "source": "User message in this workspace",
+    "quote": "功能测试通过，可以上传GitHub，版本改为0.1.15，整理一下，release文件夹也要改一下版本号",
+    "acceptedImplementation": "Corrected 0.1.14 thumbnail/navigation candidate",
+    "acceptedExecutableSha256": "f939042ac7ff456974607c7e32f2c7e676bcb71e423ca404d1f7bb540c47e21a",
+    "perScenarioMatrixSupplied": false
+  },
+  "changes": [
+    "Remove All Devices navigation/page while retaining profiles, online sidebar devices, favorites and history",
+    "Show device wallpaper only in the left history/favorite thumbnail; preserve names, connection metadata, notes, times and actions",
+    "Reset the reused wallpaper image positioning so it cannot obscure the full saved-device row",
+    "Use Start Assistance for default/post-login/deletion navigation and legacy /devices redirects; retain onboarding",
+    "Update npm, Tauri and Rust package/lock versions consistently to 0.1.15 without upgrading dependencies",
+    "Rename the local portable directory and final ZIP/checksum/notes to 0.1.15 while preserving Data and configuration"
+  ],
+  "releaseRebuild": {
+    "reason": "Embed the requested 0.1.15 application version",
+    "functionalChangesAfterAcceptance": false,
+    "sameExecutableBytesAsAccepted": false,
+    "runtimeTestsRerun": false
+  },
+  "frontendBuild": {
+    "command": "npm run build (Tauri beforeBuildCommand)",
+    "passed": true,
+    "assets": [
+      "index-CKvC0r_Q.css",
+      "index-ZQHBB7CE.js"
+    ]
+  },
+  "nativeReleaseBuild": {
+    "command": "node scripts/tauri.mjs build --no-bundle --config src-tauri/tauri.release.conf.json",
+    "passed": true,
+    "embeddedProductVersion": "0.1.15"
+  },
+  "portableBundleVerification": {
+    "command": "python scripts/verify-bundle.py .work/package-current/LLRemote-Portable-x64-0.1.15 --reference . --require-clean-data",
+    "passed": true,
+    "checkedNativeBinaries": 138,
+    "resourceFilesCompared": 1597,
+    "missingDependencies": 0,
+    "bundledWebView2Binaries": 0,
+    "pinnedComponentHashesMatch": true,
+    "systemBaseline": "Current local Windows; clean Windows acceptance deferred"
+  },
+  "unitTestsExecuted": false,
+  "webInteractionTestsExecuted": false,
+  "desktopTestsExecuted": false,
+  "engineTestsExecuted": false,
+  "userDataModified": false,
+  "publicationAuthorized": true,
+  "githubPublished": false,
+  "attachmentNaming": "Original English filenames with empty custom labels",
+  "delivery": {
+    "previousDirectory": "release/LLRemote-Portable-x64-0.1.14",
+    "directory": "release/LLRemote-Portable-x64-0.1.15",
+    "archive": "release/LLRemote-Portable-x64-0.1.15.zip",
+    "temporaryRoot": ".work/package-current",
+    "temporaryArtifactsRemoved": false,
+    "localDirectoryRenamed": true,
+    "localExecutableUpdated": true,
+    "localArchiveUpdated": true,
+    "checksum": "release/LLRemote-Portable-x64-0.1.15.zip.sha256.txt",
+    "notes": "release/LLRemote-0.1.15-release-notes.md",
+    "executableSha256": "b53112d5d6d65e26ddddbe4afbd52aa7b56e55f3a8e801ea5cc6163a0d9ccc5b",
+    "zipSha256": "0ddbedf9a889e801912f500e1931b69859066930296b4f9b8f73fd49a4f97ef9",
+    "archiveData": "Empty Data; independent clean package",
+    "preservedDataAndConfigurationFiles": 399,
+    "allPreservedFileHashesUnchanged": true,
+    "archiveReceipt": "docs/validation/0.1.15-archive-receipt.json"
+  }
+}
