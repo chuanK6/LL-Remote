@@ -114,4 +114,5 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package.ps1 -Portabl
 双端组网、实际串流、独占全屏悬浮、多屏 DPI、休眠 / 合盖 / 重启和干净 Windows 安装验证尚待后续验收。首次系统驱动或已有服务的权限要求仍遵循原内核；未将 API 启动成功当成跨电脑远控验收成功。
 
 第三方许可、源码与再分发边界见 [第三方说明](notices/THIRD-PARTY-NOTICES.md)。应用通过 GitHub Releases 分发，当前未提供代码签名或自动升级。
+
 [感谢Linuxdo社区技术支持](https://linux.do)
