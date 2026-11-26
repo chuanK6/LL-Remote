@@ -115,4 +115,6 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package.ps1 -Portabl
 
 第三方许可、源码与再分发边界见 [第三方说明](notices/THIRD-PARTY-NOTICES.md)。应用通过 GitHub Releases 分发，当前未提供代码签名或自动升级。
 
-[感谢Linuxdo社区技术支持](https://linux.do)
+## 致谢与友链
+
+感谢 LINUX DO 社区为 LL远程提供技术支持。[访问 LINUX DO 社区](https://linux.do/)
