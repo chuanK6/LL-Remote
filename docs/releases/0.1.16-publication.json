@@ -1,0 +1,52 @@
+{
+    "version":  "0.1.16",
+    "date":  "2026-11-28",
+    "timezone":  "Asia/Shanghai",
+    "published":  true,
+    "tag":  "v0.1.16",
+    "releaseId":  461417130,
+    "releaseUrl":  "https://github.com/chuanK6/LL-Remote/releases/tag/v0.1.16",
+    "sourceCommit":  "8f1575629dd14ec259f200fa75506dabb3e71fbe",
+    "publishedAtUtc":  "2026-11-28T08:44:24Z",
+    "publicDownloadsVerifiedAtUtc":  "2026-11-28T08:52:34.941952+00:00",
+    "assets":  [
+                   {
+                       "id":  803878628,
+                       "name":  "LLRemote-0.1.16-release-notes.md",
+                       "label":  "",
+                       "bytes":  2440,
+                       "sha256":  "5f347f9c0185c8d12b134b8553bd85fa594f3576d3f108d844197a9896737c5e",
+                       "url":  "https://github.com/chuanK6/LL-Remote/releases/download/v0.1.16/LLRemote-0.1.16-release-notes.md"
+                   },
+                   {
+                       "id":  803871694,
+                       "name":  "LLRemote-Portable-x64-0.1.16.zip",
+                       "label":  "",
+                       "bytes":  187857721,
+                       "sha256":  "f5be11f67516f8722c7d899f2c9c68544d129e1727c98351553bf921160cfdf8",
+                       "url":  "https://github.com/chuanK6/LL-Remote/releases/download/v0.1.16/LLRemote-Portable-x64-0.1.16.zip"
+                   },
+                   {
+                       "id":  803876368,
+                       "name":  "LLRemote-Portable-x64-0.1.16.zip.sha256.txt",
+                       "label":  "",
+                       "bytes":  100,
+                       "sha256":  "00cc32d90b15127e407a7abf13a15a1e5c75bcb1fb954cc54739bf000eabd6a3",
+                       "url":  "https://github.com/chuanK6/LL-Remote/releases/download/v0.1.16/LLRemote-Portable-x64-0.1.16.zip.sha256.txt"
+                   }
+               ],
+    "emptyArchiveData":  true,
+    "executableSha256":  "2ce287287aa79ef3d0d85fd49bb0111078069927673e8551b4130ecf763f0ea6",
+    "reusedBuiltExecutable":  true,
+    "matchedCurrentMoonlightSourceArchive":  true,
+    "runtimeTestsRerun":  false,
+    "userAcceptance":  {
+                           "lanDirect":  "Reported working in user-supplied release notes",
+                           "internetDirect":  "Not tested by user",
+                           "monitorSleepBlackScreen":  "Known",
+                           "concurrentUURemoteBlackScreen":  "User observed"
+                       },
+    "oldVersionVerificationSkippedAtUserRequest":  true,
+    "temporaryUploadDirectoryRemoved":  true,
+    "localDataModified":  false
+}
