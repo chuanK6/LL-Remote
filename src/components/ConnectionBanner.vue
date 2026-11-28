@@ -25,7 +25,7 @@ function updatePassword() { router.push({ path: '/assist', query: { mode: 'other
       <template v-if="app.snapshot.session.stage === 'streaming'"><button class="small-button" @click="app.run(() => bridge.showSession())">会话设置</button><button class="tiny-button" @click="disconnect">断开</button></template>
       <button v-if="app.snapshot.session.stage === 'disconnectFailed'" class="tiny-button" :disabled="app.loading" @click="disconnect">重试断开</button>
       <button v-if="app.snapshot.session.error?.reauthenticate" class="small-button" @click="updatePassword">更新连接密码</button>
-      <template v-if="['QUOTA_INSUFFICIENT', 'SERVICE_EXPIRED'].includes(app.snapshot.session.error?.code || '')"><button class="small-button" @click="bridge.openSignin()">前往签到</button><button class="tiny-button" @click="app.refresh">刷新时长</button></template>
+      <template v-if="['QUOTA_INSUFFICIENT', 'SERVICE_EXPIRED'].includes(app.snapshot.session.error?.code || '')"><button class="small-button" :data-signin="app.signinAvailability" @click="app.openSignin">签到</button><button class="tiny-button" @click="app.refresh">刷新时长</button></template>
       <button v-if="app.snapshot.session.stage === 'failed' && app.snapshot.session.error?.retryable && app.snapshot.session.deviceId" class="small-button" @click="app.connect({ deviceId: app.snapshot.session.deviceId! })">重试</button>
     </div>
   </div>

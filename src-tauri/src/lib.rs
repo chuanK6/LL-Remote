@@ -8,6 +8,9 @@ mod model;
 mod native_tests;
 mod platform;
 mod runtime;
+mod shortcuts;
+mod signin;
+mod signin_status;
 mod storage;
 mod sunshine_service;
 #[cfg(test)]
@@ -99,14 +102,20 @@ pub fn run() {
             commands::confirm_sunshine_pin,
             commands::save_sunshine_settings,
             commands::save_preferences,
+            commands::save_shortcuts,
+            commands::trigger_shortcut,
             commands::edit_device,
             commands::delete_device,
+            commands::delete_history_entry,
             commands::wallpaper_path,
             commands::preview_wallpaper,
             commands::save_stream_preferences,
             commands::save_quick_apps,
             commands::associate_host,
             commands::connect_device,
+            commands::connect_direct,
+            commands::direct_addresses,
+            commands::set_direct_acceptance,
             commands::resolve_role_switch,
             commands::cancel_connection,
             commands::disconnect_device,
@@ -125,6 +134,7 @@ pub fn run() {
             commands::refresh_device_apps,
             commands::open_advanced,
             commands::open_signin,
+            commands::get_signin_status,
             commands::quit_app
         ])
         .setup(|app| {

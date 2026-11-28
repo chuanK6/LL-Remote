@@ -2,9 +2,10 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getCurrentWindow } from '@tauri-apps/api/window'
-import { UserRound, ChevronDown, ArrowUpRight } from 'lucide-vue-next'
+import { UserRound, ChevronDown } from 'lucide-vue-next'
 import { bridge, native } from './bridge'
 import { normalizeError } from './domain'
+import { formatShortcut, readShortcut, shortcutActions } from './shortcuts'
 import { useAppStore } from './stores/app'
 import ConnectionBanner from './components/ConnectionBanner.vue'
 import FeedbackMessage from './components/FeedbackMessage.vue'
@@ -21,7 +22,6 @@ const router = useRouter()
 const windowLabel = native ? getCurrentWindow().label : ''
 const performanceWindow = windowLabel === 'session-performance'
 const overlay = performanceWindow || windowLabel === 'session-controls' || new URLSearchParams(location.search).get('window') === 'session'
-const guiding = computed(() => route.name === 'setup' || route.name === 'login')
 const pairingDialog = ref<HTMLDialogElement>()
 const pairingInput = ref<HTMLInputElement>()
 const incomingPairingId = ref('')
@@ -34,12 +34,25 @@ let seenPairings = new Set<string>()
 let refreshTimer: ReturnType<typeof setInterval> | undefined
 let stopFocusListener: UnlistenFn | undefined
 let stopIncomingListener: UnlistenFn | undefined
+let stopSigninListener: UnlistenFn | undefined
 const incomingControl = ref<IncomingControl | null>(null)
 const incomingExpanded = ref(false)
 const routeDeviceId = computed(() => route.name === 'history-device'
   ? app.snapshot.history.find(entry => entry.id === route.params.id)?.deviceId
   : ['device', 'saved-history-device', 'favorite-device'].includes(String(route.name)) ? route.params.id : null)
 const deviceHasStream = computed(() => routeDeviceId.value === app.snapshot.session.deviceId && !!routeDeviceId.value && app.snapshot.session.stage === 'streaming')
+
+function handleShortcut(event: KeyboardEvent) {
+  if (event.defaultPrevented || (event.target instanceof HTMLElement && event.target.closest('input, textarea, select, [contenteditable]'))) return
+  const shortcut = readShortcut(event)
+  if (!shortcut) return
+  const binding = formatShortcut(shortcut)
+  const action = shortcutActions.find(candidate => formatShortcut(app.snapshot.preferences.shortcuts[candidate]) === binding)
+  if (!action) return
+  event.preventDefault()
+  if (event.repeat || app.loading) return
+  void bridge.triggerShortcut(action).catch(caught => { app.error = normalizeError(caught) })
+}
 
 function updateIncomingControl(control: IncomingControl) {
   if (control.count === 0) {
@@ -113,13 +126,14 @@ watch(pendingPairings, pairings => {
     void showPairingDialog()
   }
 }, { deep: true, immediate: true, flush: 'post' })
-async function signIn() { if (guiding.value) await router.push('/account'); try { await bridge.openSignin() } catch (caught) { app.error = normalizeError(caught) } }
 onMounted(async () => {
   if (overlay) return
   await app.init()
   if (!native && route.name === 'devices' && app.snapshot.devices[0]) await router.replace(`/device/${app.snapshot.devices[0].id}`)
   if (native) {
+    globalThis.addEventListener('keydown', handleShortcut)
     const window = getCurrentWindow()
+    stopSigninListener = await bridge.listenSigninUpdated(() => { void app.refreshSigninStatus() })
     let receivedUpdate = false
     stopIncomingListener = await bridge.listenIncomingControl(control => {
       receivedUpdate = true
@@ -128,11 +142,24 @@ onMounted(async () => {
     void bridge.incomingControl().then(control => {
       if (!receivedUpdate) updateIncomingControl(control)
     }).catch(caught => { app.error = normalizeError(caught) })
-    stopFocusListener = await window.onFocusChanged(event => { if (event.payload && app.initialized) app.refreshBackground() })
-    refreshTimer = setInterval(() => { if (app.initialized) app.refreshBackground() }, 4000)
+    stopFocusListener = await window.onFocusChanged(event => {
+      if (event.payload && app.initialized) {
+        void app.refreshBackground()
+        app.updateSigninClock()
+      }
+    })
+    refreshTimer = setInterval(() => {
+      if (app.initialized) {
+        void app.refreshBackground()
+        app.updateSigninClock()
+      }
+    }, 4000)
   }
 })
-onBeforeUnmount(() => { clearInterval(refreshTimer); stopFocusListener?.(); stopIncomingListener?.(); clearPairingInput() })
+onBeforeUnmount(() => { globalThis.removeEventListener('keydown', handleShortcut); clearInterval(refreshTimer); stopFocusListener?.(); stopIncomingListener?.(); stopSigninListener?.(); clearPairingInput() })
+watch(() => app.signinAccount, account => {
+  if (native && !overlay && account) void app.refreshSigninStatus()
+}, { immediate: true })
 watch(() => app.snapshot.session.stage, stage => {
   if (overlay) return
   if (stage === 'pairing') router.push('/pairing')
@@ -157,7 +184,7 @@ watch(() => route.fullPath, () => {
           <span>{{ app.snapshot.account.username || '皎月连账号' }}</span>
           <ChevronDown class="chevron-icon" />
         </button>
-        <button class="signin-button" @click="signIn">签到 <ArrowUpRight :size="14" /></button>
+        <button class="signin-button" :data-signin="app.signinAvailability" @click="app.openSignin">签到</button>
       </div>
     </header>
     <MainSidebar :hidden="incomingExpanded">
@@ -166,6 +193,7 @@ watch(() => route.fullPath, () => {
     <IncomingControlPanel v-if="incomingControl && incomingExpanded" :control="incomingControl" @toggle="incomingExpanded = false" />
     <main v-show="!incomingExpanded" class="workspace" id="pageContent">
       <ConnectionBanner v-if="!deviceHasStream" />
+      <FeedbackMessage v-if="app.signinReminder" :message="app.signinReminder" kind="warning" />
       <FeedbackMessage v-if="app.error" :message="app.error.message" kind="error" />
       <FeedbackMessage v-if="app.snapshot.storageWarning" :message="app.snapshot.storageWarning" kind="warning" />
       <div v-if="pendingPairings.length" class="connection-banner" role="status"><span>有设备等待本机确认配对 PIN。</span><button class="small-button" @click="showPairingDialog">确认配对 PIN</button></div>

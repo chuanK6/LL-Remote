@@ -87,7 +87,9 @@ fn host_candidates(
 }
 use zeroize::Zeroizing;
 
+mod direct;
 mod role_switch;
+mod shortcuts;
 
 #[derive(Clone)]
 struct RoleResume {
@@ -108,6 +110,7 @@ pub struct SessionData {
     pub pipe_name: String,
     pub token: Zeroizing<String>,
     pub changing: bool,
+    direct: bool,
     role_resume: Option<RoleResume>,
     role_conflict_address: Option<String>,
     role_switch_prompt: Option<tokio::sync::oneshot::Sender<bool>>,
@@ -118,6 +121,7 @@ pub struct Runtime {
     pub vault: Vault,
     pub engines: EngineManager,
     pub nat: NatAdapter,
+    direct_acceptance: Mutex<Option<direct::Acceptance>>,
     pub sunshine: SunshineAdapter,
     pub moonlight: MoonlightAdapter,
     pub power: StdMutex<PowerManager>,
@@ -229,6 +233,7 @@ impl Runtime {
             vault,
             engines: EngineManager::new(paths, data_root),
             nat,
+            direct_acceptance: Mutex::new(None),
             sunshine,
             moonlight,
             power: StdMutex::new(power),
@@ -245,6 +250,7 @@ impl Runtime {
                 pipe_name: String::new(),
                 token: Zeroizing::new(String::new()),
                 changing: false,
+                direct: false,
                 role_resume: None,
                 role_conflict_address: None,
                 role_switch_prompt: None,
@@ -407,6 +413,7 @@ impl Runtime {
         web_password: &str,
         started: SystemTime,
     ) -> Result<()> {
+        self.require_no_direct_acceptance().await?;
         let (account, _) = self.nat.snapshot().await?;
         if !account.authenticated {
             return Err(AppError::new(ErrorCode::LoginRequired, "请先登录皎月连。"));
@@ -484,6 +491,7 @@ impl Runtime {
         let _guard = self.administrative_lock.lock().await;
         self.cancel_role_restore().await;
         self.pause_automatic_acceptance(true);
+        self.stop_direct_acceptance().await?;
         let account = self.nat.cached_account().await;
         let accepting = self.store()?.preferences.accept_control;
         if account.server_running {
@@ -586,6 +594,7 @@ impl Runtime {
         let (account, network) = self.nat.cached_state().await;
         self.reconcile_sunshine(&sunshine, &account)?;
         let session = self.session.lock().await.snapshot.clone();
+        let direct_acceptance = self.direct_acceptance.lock().await.as_ref().map(|acceptance| acceptance.status.clone());
         let show_pairing = {
             let mut previous = self
                 .pending_pairing_ids
@@ -703,6 +712,7 @@ impl Runtime {
             devices,
             history: store.account_data.history.clone(),
             sunshine,
+            direct_acceptance,
             session,
             components,
             power_status,
@@ -780,7 +790,7 @@ impl Runtime {
                             source: "account".into(),
                             uuid: info.map(|info| info.uuid.clone()),
                             nat_id: Some(host.id),
-                            account_host_name: Some(host.name),
+                            account_host_name: (!host.name.trim().is_empty()).then_some(host.name),
                             address: host.address,
                             status: "online".into(),
                             service_ready: host.service_ready,
@@ -947,6 +957,16 @@ impl Runtime {
                 "请在协助页面填写此设备的组网地址。",
             ));
         }
+        self.begin_connection(request, device, permit, false).await
+    }
+
+    async fn begin_connection(
+        self: &Arc<Self>,
+        request: ConnectRequest,
+        device: Option<Device>,
+        permit: tokio::sync::OwnedSemaphorePermit,
+        direct: bool,
+    ) -> Result<SessionSnapshot> {
         let snapshot = {
             let mut session = self.session.lock().await;
             if self.exiting.load(Ordering::SeqCst) {
@@ -966,6 +986,7 @@ impl Runtime {
             session.address = None;
             session.child = None;
             session.changing = false;
+            session.direct = direct;
             session.role_conflict_address = None;
             session.role_switch_prompt = None;
             session.pipe_name = format!("LLRemote-{id}");
@@ -984,7 +1005,7 @@ impl Runtime {
                         d.display_name.clone()
                     }
                 }),
-                stage: "preparingNetwork".into(),
+                stage: if direct { "checkingHost" } else { "preparingNetwork" }.into(),
                 attempt: 1,
                 app: request.app.clone().or_else(|| Some("Desktop".into())),
                 extension_available: self.engines.paths.manifest.moonlight.extension_protocol == 1,
@@ -997,7 +1018,11 @@ impl Runtime {
         tokio::spawn(async move {
             let _permit = permit;
             let started = SystemTime::now();
-            let result = runtime.connect_inner(&request, device).await;
+            let result = if direct {
+                runtime.connect_direct_attempt(&request, device.as_ref()).await
+            } else {
+                runtime.connect_inner(&request).await
+            };
             if let Err(error) = result {
                 let (canceled, device_id) = {
                     let session = runtime.session.lock().await;
@@ -1011,6 +1036,7 @@ impl Runtime {
                         &request,
                         &AppError::new(ErrorCode::Canceled, "连接已取消。"),
                         device_id.as_deref(),
+                        direct,
                     );
                     return;
                 }
@@ -1022,8 +1048,8 @@ impl Runtime {
                     error
                 };
                 let canceled = error.code == ErrorCode::Canceled;
-                runtime.record_failure(&request, &error, device_id.as_deref());
-                if canceled || error.code == ErrorCode::PermissionDenied {
+                runtime.record_failure(&request, &error, device_id.as_deref(), direct);
+                if !direct && (canceled || error.code == ErrorCode::PermissionDenied) {
                     runtime.nat.cancel_owned_connection().await;
                 }
                 runtime
@@ -1038,7 +1064,7 @@ impl Runtime {
                     let _ = runtime.app.emit_to("main", "ll:snapshot", snapshot);
                 }
             }
-            if !runtime.session.lock().await.cancel.is_cancelled() {
+            if !direct && !runtime.session.lock().await.cancel.is_cancelled() {
                 match runtime.finish_role_session().await {
                     Ok(()) => runtime.schedule_role_restore().await,
                     Err(error) => runtime.stage("disconnectFailed", Some(error)).await,
@@ -1050,11 +1076,7 @@ impl Runtime {
         });
         Ok(snapshot)
     }
-    async fn connect_inner(
-        self: &Arc<Self>,
-        request: &ConnectRequest,
-        _initial_device: Option<Device>,
-    ) -> Result<()> {
+    async fn connect_inner(self: &Arc<Self>, request: &ConnectRequest) -> Result<()> {
         let cancel = self.session.lock().await.cancel.clone();
         // Address discovery can reveal a collision only after the first tunnel
         // is established. Retry that tunnel once within the same logical session.
@@ -1298,8 +1320,20 @@ impl Runtime {
         if let Ok(snapshot) = self.snapshot().await {
             let _ = self.app.emit_to("main", "ll:snapshot", snapshot);
         }
+        self.stream_host(request, info, preferences, code, false, &cancel).await
+    }
+
+    async fn stream_host(
+        self: &Arc<Self>,
+        request: &ConnectRequest,
+        info: HostInfo,
+        preferences: StreamPreferences,
+        code: Option<&str>,
+        direct: bool,
+        cancel: &CancellationToken,
+    ) -> Result<()> {
         self.stage("checkingPairing", None).await;
-        let apps = match self.moonlight.list_apps(&info.address, Some(&info.uuid), &cancel).await? {
+        let apps = match self.moonlight.list_apps(&info.address, Some(&info.uuid), cancel).await? {
             AppList::Paired(apps) => apps,
             AppList::NeedsPairing => {
                 let random = uuid::Uuid::new_v4();
@@ -1313,11 +1347,11 @@ impl Runtime {
                     let snapshot = session.snapshot.clone();
                     self.emit_session(&snapshot);
                 }
-                let result = self.moonlight.pair(&info.address, Some(&info.uuid), &pin, &cancel).await;
+                let result = self.moonlight.pair(&info.address, Some(&info.uuid), &pin, cancel).await;
                 self.session.lock().await.snapshot.pin = None;
                 result?;
                 self.stage("checkingPairing", None).await;
-                self.moonlight.apps_after_pairing(&info.address, &info.uuid, &cancel).await?
+                self.moonlight.apps_after_pairing(&info.address, &info.uuid, cancel).await?
             }
         };
         let application = request.app.as_deref().unwrap_or("Desktop");
@@ -1343,13 +1377,15 @@ impl Runtime {
                 &preferences,
                 &session.pipe_name,
                 &session.token,
+                &self.store()?.preferences.shortcuts,
             )?;
+            self.watch_stream_shortcuts(&session, &process.child, process.shortcut_events);
             session.child = Some(process.child);
             session.verified = process.verified;
             session.address = Some(info.address.clone());
             session.snapshot.preferences = Some(preferences.clone());
         }
-        self.await_stream(&cancel).await?;
+        self.await_stream(cancel).await?;
         let id = {
             let mut store = self.store()?;
             let mut connected = store
@@ -1357,7 +1393,7 @@ impl Runtime {
                 .devices
                 .iter()
                 .find(|device| {
-                    device
+                    (device.source == "direct") == direct && device
                         .uuid
                         .as_deref()
                         .is_some_and(|uuid| uuid.eq_ignore_ascii_case(&info.uuid))
@@ -1378,7 +1414,9 @@ impl Runtime {
                 device_id: Some(id.clone()),
                 peer_code: code.map(str::to_owned),
                 connected_at: now(),
-                method: if code.is_some() {
+                method: if direct {
+                    "IP 直连"
+                } else if code.is_some() {
                     "识别码"
                 } else {
                     "同账号 / 已有连接"
@@ -1707,10 +1745,11 @@ impl Runtime {
         request: &ConnectRequest,
         error: &AppError,
         connected_device_id: Option<&str>,
+        direct: bool,
     ) {
         let device_id = connected_device_id.or(request.device_id.as_deref());
         if let Ok(mut store) = self.store() {
-            if error.reauthenticate {
+            if error.reauthenticate && !direct {
                 if let Some(device) = store
                     .account_data
                     .devices
@@ -1725,7 +1764,9 @@ impl Runtime {
                 device_id: device_id.map(str::to_owned),
                 peer_code: request.peer_code.clone(),
                 connected_at: now(),
-                method: if request.peer_code.is_some() {
+                method: if direct {
+                    "IP 直连"
+                } else if request.peer_code.is_some() {
                     "识别码"
                 } else {
                     "同账号 / 已有连接"
@@ -1899,17 +1940,19 @@ impl Runtime {
             self.stage("disconnectFailed", Some(error.clone())).await;
             return Err(error);
         }
-        let device_id = {
+        let (device_id, direct) = {
             let session = self.session.lock().await;
             if session.snapshot.id.as_deref() != Some(id) {
                 return Err(AppError::new(ErrorCode::SessionEnded, "此会话已经结束。"));
             }
-            session.snapshot.device_id.clone()
+            (session.snapshot.device_id.clone(), session.direct)
         };
-        let device = device_id.and_then(|id| self.store().ok()?.device(&id).ok());
-        if let Err(error) = self.nat.end_session_connection(device.as_ref()).await {
-            self.stage("disconnectFailed", Some(error.clone())).await;
-            return Err(error);
+        if !direct {
+            let device = device_id.and_then(|id| self.store().ok()?.device(&id).ok());
+            if let Err(error) = self.nat.end_session_connection(device.as_ref()).await {
+                self.stage("disconnectFailed", Some(error.clone())).await;
+                return Err(error);
+            }
         }
         self.stage(final_stage, None).await;
         self.schedule_role_restore().await;
@@ -1929,7 +1972,7 @@ impl Runtime {
         };
         if let Some(session_id) = session_id {
             self.disconnect(&session_id).await?;
-        } else {
+        } else if device.source != "direct" {
             let _permit = self.gate.try_acquire().map_err(|_| {
                 AppError::new(ErrorCode::Busy, "另一台设备正在连接，请先结束该连接。")
             })?;
@@ -2042,7 +2085,9 @@ impl Runtime {
                         &preferences,
                         &pipe,
                         &token,
+                        &self.store()?.preferences.shortcuts,
                     )?;
+                    self.watch_stream_shortcuts(&session, &process.child, process.shortcut_events);
                     session.child = Some(process.child);
                     session.verified = process.verified;
                 }
@@ -2265,6 +2310,10 @@ impl Runtime {
     }
 
     async fn restore_background_services(self: &Arc<Self>, retry_login: bool) -> Result<()> {
+        let direct = self.direct_acceptance.lock().await.is_some();
+        if direct && !self.sunshine.running().await {
+            self.stop_direct_acceptance().await?;
+        }
         let cancel = CancellationToken::new();
         let account = if retry_login {
             self.restore_jiaoyue(&cancel).await?
@@ -2278,7 +2327,7 @@ impl Runtime {
                 store.preferences.accept_control,
             )
         };
-        if !desired
+        if !desired || direct
             || self.pause_automatic_acceptance.load(Ordering::SeqCst)
             || self.session.lock().await.role_resume.is_some()
         {
@@ -2306,6 +2355,19 @@ impl Runtime {
     }
 
     pub async fn prepare_background(self: &Arc<Self>) {
+        {
+            let _guard = self.administrative_lock.lock().await;
+            if self.direct_acceptance.lock().await.is_none() {
+                if let Err(error) = self.sunshine.restore_direct_firewall().await {
+                    tracing::warn!(code = ?error.code, "Could not remove leftover direct access firewall rules");
+                    if let Ok(mut store) = self.store() {
+                        if store.warning.is_none() {
+                            store.warning = Some("上次的直连防火墙规则尚未清理，请在 IP 直连页检查。".into());
+                        }
+                    }
+                }
+            }
+        }
         let mut next_recovery = tokio::time::Instant::now();
         let mut manual_login_required = false;
         let mut device_account = None;
@@ -2410,7 +2472,8 @@ impl Runtime {
             }
         );
         let firewall = self.sunshine.restore_vpn_firewall().await;
-        let result = sunshine.and(network).and(firewall).and_then(|()| {
+        let direct_firewall = self.sunshine.restore_direct_firewall().await;
+        let result = sunshine.and(network).and(firewall).and(direct_firewall).and_then(|()| {
             if stop_accepting {
                 let mut store = self.store()?;
                 store.preferences.accept_control = false;

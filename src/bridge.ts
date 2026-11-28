@@ -1,7 +1,8 @@
 import { convertFileSrc, invoke, isTauri } from '@tauri-apps/api/core'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
-import type { AppError, AppSnapshot, ConnectRequest, DeviceEdit, Diagnostic, GeneralPreferences, IncomingControl, SessionPatch, SessionSnapshot, StreamPreferences, SunshineSettings } from './types'
+import type { AppError, AppSnapshot, ConnectRequest, DeviceEdit, Diagnostic, DirectAccess, GeneralPreferences, IncomingControl, SessionPatch, SessionSnapshot, SigninStatus, StreamPreferences, SunshineSettings } from './types'
 import { previewSnapshot } from './preview'
+import type { ShortcutAction, Shortcuts } from './shortcuts'
 
 export const native = isTauri()
 const desktopRequired = { code: 'DESKTOP_REQUIRED', message: '此操作需要在 Windows 桌面版 LL远程中完成。', retryable: false, reauthenticate: false }
@@ -9,6 +10,8 @@ const browserSnapshot = previewSnapshot()
 const call = <T>(command: string, args?: Record<string, unknown>): Promise<T> => native ? invoke<T>(command, args) : Promise.reject(desktopRequired)
 
 export const bridge = {
+  saveShortcuts: (shortcuts: Shortcuts) => call<AppSnapshot>('save_shortcuts', { shortcuts }),
+  triggerShortcut: (action: ShortcutAction) => call<void>('trigger_shortcut', { action }),
   snapshot: (): Promise<AppSnapshot> => native ? call('bootstrap') : Promise.resolve(structuredClone(browserSnapshot)),
   refresh: (): Promise<AppSnapshot> => native ? call('refresh_state') : Promise.resolve(structuredClone(browserSnapshot)),
   login: (username: string, password: string, remember: boolean) => call<AppSnapshot>('login_jiaoyue', { username, password, remember }),
@@ -38,6 +41,16 @@ export const bridge = {
     browserSnapshot.history = browserSnapshot.history.filter(entry => entry.deviceId !== deviceId)
     return structuredClone(browserSnapshot)
   },
+  deleteHistoryEntry: async (recordId: string): Promise<AppSnapshot> => {
+    if (native) return call('delete_history_entry', { recordId })
+    const record = browserSnapshot.history.find(entry => entry.id === recordId)
+    const savedId = recordId.startsWith('saved-') ? recordId.slice('saved-'.length) : null
+    const deviceId = record ? record.deviceId : savedId
+    const device = browserSnapshot.devices.find(device => device.id === deviceId)
+    if (device && (record || !browserSnapshot.history.some(entry => entry.deviceId === device.id))) device.historyFallbackHidden = true
+    browserSnapshot.history = browserSnapshot.history.filter(entry => entry.id !== recordId)
+    return structuredClone(browserSnapshot)
+  },
   saveStream: async (deviceId: string | null, preferences: StreamPreferences): Promise<AppSnapshot> => {
     if (native) return call('save_stream_preferences', { deviceId, preferences })
     const device = browserSnapshot.devices.find(candidate => candidate.id === deviceId)
@@ -48,6 +61,9 @@ export const bridge = {
   saveQuickApps: (deviceId: string, apps: string[]) => call<AppSnapshot>('save_quick_apps', { deviceId, apps }),
   associateHost: (deviceId: string, natId: string) => call<AppSnapshot>('associate_host', { deviceId, natId }),
   connect: (request: ConnectRequest) => call<SessionSnapshot>('connect_device', { request }),
+  connectDirect: ({ deviceId, address, app }: ConnectRequest) => call<SessionSnapshot>('connect_direct', { deviceId, address, app }),
+  directAddresses: () => call<string[]>('direct_addresses'),
+  setDirectAcceptance: (access: DirectAccess | null, address: string | null) => call<AppSnapshot>('set_direct_acceptance', { access, address }),
   roleSwitchDecision: (sessionId: string, enabled: boolean) => call<void>('resolve_role_switch', { sessionId, enabled }),
   cancel: () => call<SessionSnapshot>('cancel_connection'),
   disconnect: (sessionId: string) => call<SessionSnapshot>('disconnect_session', { sessionId }),
@@ -62,6 +78,8 @@ export const bridge = {
   refreshApps: (deviceId: string) => call<AppSnapshot>('refresh_device_apps', { deviceId }),
   openAdvanced: (app: string, deviceId: string | null = null) => call<string | null>('open_advanced', { app, deviceId }),
   openSignin: async () => { if (native) await call('open_signin'); else window.open('https://www.natpierce.cn/pc/sign/index.html', '_blank', 'noopener,noreferrer') },
+  signinStatus: () => call<SigninStatus | null>('get_signin_status'),
+  listenSigninUpdated: (handler: () => void) => listen('ll:signin-updated', handler),
   wallpaper: async (relative: string): Promise<string> => native ? convertFileSrc(await call<string>('wallpaper_path', { relative })) : relative,
   previewWallpaper: (path: string) => call<string>('preview_wallpaper', { path }),
   quit: (stopAccepting: boolean) => call<void>('quit_app', { stopAccepting }),

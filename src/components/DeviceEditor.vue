@@ -3,7 +3,7 @@ import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { open } from '@tauri-apps/plugin-dialog'
 import { X } from 'lucide-vue-next'
 import { bridge, native } from '../bridge'
-import { deviceName, normalizeError } from '../domain'
+import { deviceName, normalizeError, onlineDeviceName } from '../domain'
 import { useAppStore } from '../stores/app'
 import type { Device } from '../types'
 import DeviceWallpaper from './DeviceWallpaper.vue'
@@ -77,10 +77,11 @@ onBeforeUnmount(() => { imageRequest++; document.querySelector('.shell')?.remove
 <template>
   <Teleport to="body"><div class="device-editor-backdrop" @click.self="close"><section ref="dialog" class="device-editor" role="dialog" aria-modal="true" aria-labelledby="deviceEditorTitle"><div class="editor-heading"><h2 id="deviceEditorTitle">编辑设备</h2><button type="button" class="plain-icon" aria-label="关闭设备编辑弹窗" :disabled="loading" @click="close"><X :size="22"/></button></div>
     <form @submit.prevent="save">
-      <label class="form-label" for="editorName">设备名称</label>
+      <p v-if="device.accountOnline" class="setting-detail">皎月连主机名 {{ onlineDeviceName(device) }}</p>
+      <label class="form-label" for="editorName">{{ device.accountOnline ? '本机显示名称' : '设备名称' }}</label>
       <input id="editorName" ref="nameInput" v-model="name" class="text-input" maxlength="64" required autocomplete="off"/>
       <label class="form-label" for="editorNote">备注</label>
-      <input id="editorNote" v-model="note" class="text-input" maxlength="256" placeholder="仅保存在本机"/>
+      <input id="editorNote" v-model="note" class="text-input" maxlength="256" :placeholder="device.accountOnline ? '显示在皎月连主机名下方' : '仅保存在本机'"/>
       <div class="editor-wallpaper-heading">设备壁纸（PNG、JPEG、WebP，不超过 5 MB）</div>
       <div class="editor-wallpaper-preview"><img v-if="imagePreview" :src="imagePreview" alt="壁纸预览"/><DeviceWallpaper v-else :path="resetWallpaper ? null : device.wallpaper"/></div>
       <div class="wallpaper-actions">

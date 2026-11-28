@@ -30,7 +30,7 @@ const records = computed(() => {
   })
   // Keep older saved connections even when they have no detailed history/time.
   for (const device of app.snapshot.devices) {
-    if (recordedIds.has(device.id) || (!device.lastConnectedAt && device.source === 'account')) continue
+    if (recordedIds.has(device.id) || device.historyFallbackHidden || (!device.lastConnectedAt && device.source === 'account')) continue
     entries.push({
       id: `saved-${device.id}`, deviceId: device.id, device,
       peerCode: device.peerCode, connectedAt: device.lastConnectedAt || '',
@@ -69,7 +69,7 @@ function detailRoute(entry: RecordCard) {
     <button v-if="filterId" class="secondary icon-button" @click="router.push('/history')"><ArrowLeft :size="16" />全部连接记录</button>
   </div>
   <p v-if="filteredDevice" class="history-filter">{{ deviceName(filteredDevice) }} 的连接记录</p>
-  <SavedDeviceList v-if="records.length" :items="cards" :disabled="app.loading || app.busy" @delete="app.deleteSavedDevice" />
+  <SavedDeviceList v-if="records.length" :items="cards" delete-label="仅删除这条连接记录" :disabled="app.loading" @delete="app.deleteHistoryEntry" />
   <div v-else class="empty-state">
     <History :size="54" :stroke-width="1.1" aria-hidden="true" />
     <h2>{{ query ? '没有找到匹配记录' : '还没有连接记录' }}</h2>

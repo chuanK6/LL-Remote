@@ -5,6 +5,7 @@ use crate::{
     model::*,
     platform,
     runtime::Runtime,
+    signin,
     storage::{SecretRecord, Vault},
 };
 use std::{sync::Arc, time::SystemTime};
@@ -79,6 +80,7 @@ pub async fn login_jiaoyue(
         .nat
         .login(username.trim(), &password, &CancellationToken::new())
         .await?;
+    signin::close(&window);
     let reference = Vault::reference("local", "jiaoyue-login");
     if remember {
         runtime.vault.put(
@@ -127,6 +129,7 @@ pub async fn logout_jiaoyue(window: WebviewWindow, runtime: Backend<'_>) -> Resu
     runtime.cancel_role_restore().await;
     let _guard = runtime.administrative_lock.lock().await;
     runtime.nat.logout().await?;
+    signin::close(&window);
     runtime
         .vault
         .delete(&Vault::reference("local", "jiaoyue-login"))?;
@@ -177,6 +180,7 @@ pub async fn control_sunshine(
             runtime.sunshine.start().await?;
         }
         "stop" => {
+            runtime.stop_direct_acceptance().await?;
             runtime.sunshine.stop().await?;
         }
         "restart" => {
@@ -210,6 +214,7 @@ pub async fn set_accept_control(
     }
     let _guard = runtime.administrative_lock.lock().await;
     let started = SystemTime::now();
+    runtime.require_no_direct_acceptance().await?;
     let password = Zeroizing::new(password);
     runtime.require_no_role_pause().await?;
     let web_password = Zeroizing::new(web_password.unwrap_or_default());
@@ -320,6 +325,26 @@ pub async fn save_sunshine_settings(
     runtime.refresh().await
 }
 #[tauri::command]
+pub async fn save_shortcuts(
+    window: WebviewWindow,
+    runtime: Backend<'_>,
+    shortcuts: crate::shortcuts::Shortcuts,
+) -> Result<AppSnapshot> {
+    main_only(&window)?;
+    runtime.save_shortcuts(shortcuts).await
+}
+
+#[tauri::command]
+pub async fn trigger_shortcut(
+    window: WebviewWindow,
+    runtime: Backend<'_>,
+    action: crate::shortcuts::ShortcutAction,
+) -> Result<()> {
+    main_only(&window)?;
+    runtime.inner().trigger_shortcut(action).await
+}
+
+#[tauri::command]
 pub async fn save_preferences(
     window: WebviewWindow,
     runtime: Backend<'_>,
@@ -418,6 +443,17 @@ pub async fn delete_device(
         runtime.nat.disconnect_device(&device).await?;
     }
     runtime.store()?.remove_device(&device_id)?;
+    runtime.snapshot().await
+}
+#[tauri::command]
+pub async fn delete_history_entry(
+    window: WebviewWindow,
+    runtime: Backend<'_>,
+    record_id: String,
+) -> Result<AppSnapshot> {
+    main_only(&window)?;
+    let _guard = runtime.administrative_lock.lock().await;
+    runtime.store()?.remove_history_entry(&record_id)?;
     runtime.snapshot().await
 }
 #[tauri::command]
@@ -524,7 +560,10 @@ pub async fn associate_host(
     main_only(&window)?;
     {
         let mut store = runtime.store()?;
-        store.device(&device_id)?;
+        let mut device = store.device(&device_id)?;
+        if device.source == "direct" {
+            return Err(AppError::new(ErrorCode::InvalidInput, "IP 直连记录使用独立地址。"));
+        }
         if !store
             .account_data
             .devices
@@ -536,7 +575,6 @@ pub async fn associate_host(
                 "关联主机不在当前账号目录中。",
             ));
         }
-        let mut device = store.device(&device_id)?;
         let target = store
             .account_data
             .devices
@@ -568,6 +606,34 @@ pub async fn connect_device(
 ) -> Result<SessionSnapshot> {
     main_only(&window)?;
     runtime.inner().connect(request).await
+}
+#[tauri::command]
+pub async fn connect_direct(
+    window: WebviewWindow,
+    runtime: Backend<'_>,
+    device_id: Option<String>,
+    address: Option<String>,
+    app: Option<String>,
+) -> Result<SessionSnapshot> {
+    main_only(&window)?;
+    runtime.inner().connect_direct(device_id, address, app).await
+}
+
+#[tauri::command]
+pub async fn direct_addresses(window: WebviewWindow, runtime: Backend<'_>) -> Result<Vec<String>> {
+    main_only(&window)?;
+    runtime.sunshine.direct_addresses().await
+}
+
+#[tauri::command]
+pub async fn set_direct_acceptance(
+    window: WebviewWindow,
+    runtime: Backend<'_>,
+    access: Option<DirectAccess>,
+    address: Option<String>,
+) -> Result<AppSnapshot> {
+    main_only(&window)?;
+    runtime.set_direct_acceptance(access, address).await
 }
 #[tauri::command]
 pub async fn resolve_role_switch(
@@ -831,9 +897,23 @@ pub async fn open_advanced(
     }
 }
 #[tauri::command]
-pub fn open_signin(window: WebviewWindow) -> Result<()> {
+pub async fn open_signin(window: WebviewWindow, runtime: Backend<'_>) -> Result<()> {
     main_only(&window)?;
-    platform::open_url("https://www.natpierce.cn/pc/sign/index.html")
+    let _guard = runtime.administrative_lock.lock().await;
+    signin::open(&window, &runtime).await
+}
+#[tauri::command]
+pub async fn get_signin_status(
+    window: WebviewWindow,
+    runtime: Backend<'_>,
+) -> Result<Option<crate::signin_status::SigninStatus>> {
+    main_only(&window)?;
+    let account = runtime.nat.cached_account().await;
+    let Some(username) = account.username.filter(|_| account.authenticated) else {
+        return Ok(None);
+    };
+    let store = runtime.store()?;
+    crate::signin_status::load(&store, username)
 }
 #[tauri::command]
 pub async fn quit_app(

@@ -1,0 +1,39 @@
+{
+    "version":  "0.1.16",
+    "date":  "2026-11-28",
+    "timezone":  "Asia/Shanghai",
+    "status":  "Local portable candidate",
+    "changes":  [
+                    "Add configurable mouse capture, disconnect, and keep-display-awake shortcuts to Settings",
+                    "Handle shortcuts in the LLRemote main window and the managed Moonlight stream window",
+                    "Preserve preferences, device records and pairings"
+                ],
+    "moonlightBuild":  "Rebuilt the pinned v6.2.0 LL management extension",
+    "nativeReleaseBuild":  "node scripts/tauri.mjs build --no-bundle --config src-tauri/tauri.release.conf.json",
+    "executableSha256":  "2ce287287aa79ef3d0d85fd49bb0111078069927673e8551b4130ecf763f0ea6",
+    "portableBundleVerification":  {
+                                       "checkedNativeBinaries":  138,
+                                       "bundledWebView2Binaries":  0,
+                                       "webview2Delivery":  "system-evergreen",
+                                       "nestedQtPluginsChecked":  true,
+                                       "pinnedComponentHashesMatch":  true,
+                                       "resourceFilesCompared":  1597,
+                                       "nsisBundleMarkerAccepted":  false,
+                                       "missingDependencies":  0,
+                                       "systemBaseline":  "Current local Windows; clean Windows acceptance deferred"
+                                   },
+    "runtimeTestsExecuted":  false,
+    "userAcceptancePending":  [
+                                  "Mouse capture/release, complete disconnect and local display state",
+                                  "Custom combinations in windowed and fullscreen sessions",
+                                  "Changing combinations and resetting defaults"
+                              ],
+    "githubPublished":  false,
+    "delivery":  {
+                     "archive":  "release/LLRemote-Portable-x64-0.1.16.zip",
+                     "sha256":  "8237bf42f9ab1ca4658a8663290361276c5e3b1a69bcc38157559ce4fc1c29bf",
+                     "bytes":  187854524,
+                     "existingDataModified":  false,
+                     "temporaryPackageRemoved":  true
+                 }
+}

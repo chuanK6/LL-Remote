@@ -24,6 +24,14 @@
 
 源码仓库应包含哪些文件、哪些原生资源需要在克隆后补齐，见 [Git 上传清单](Git上传清单.md) 和 [当前上传文件列表](Git上传文件列表.txt)。
 
+当前版本为 0.1.16，包含应用内签到、可自定义快捷键和 IP 直连。用户确认局域网直连可用，公网尚待实测，显示器熄屏及与 UU 同时控制的黑屏列为已知问题。此次公开交付沿用现有 Windows EXE，更新对应源码与发布资料。[0.1.16 说明](releases/0.1.16.md) · [构建记录](validation/0.1.16-shortcuts.json)
+
+2026-11-28 用户报告局域网直连在管理员运行时仍报防火墙操作失败。直连脚本按 Windows 规则所需格式处理 Sunshine 程序路径，检查当前网卡的入站与本机规则策略，读回独立的 TCP 和 UDP 规则。失败后只清理自身规则，提示保留失败步骤及 Windows 状态码。台式机熄屏后首次串流黑屏的根因待实机定位，先核对 Windows 用户会话、Sunshine 活动显示输出和「保持显示器常亮」设置。[本轮记录](validation/0.1.16-lan-fix.json)
+
+同日将 `delete_history_entry` 与 `delete_device` 分开。历史页按记录 ID 单条删除，兼容旧资料生成的历史卡片，删除最后一条后也会隐藏该卡片。设备资料及 `last_connected_at` 保留，新连接会产生新记录。整台设备删除入口位于收藏页，旧文档中的历史页整机删除仅作为 0.1.14 实现记录。
+
+快捷键设置保存在 `Preferences.shortcuts`。旧版偏好缺失此字段会采用默认组合。主界面通过 `trigger_shortcut` 执行动作，LL 管理的 Moonlight 会话由 SDL 键盘处理捕获组合。断开和本机常亮只上报固定动作，LL 按串流进程及会话 ID 核对来源。会话内更新通过原认证 IPC 应用，普通 Moonlight 窗口继续使用原生键位。[快捷键交付记录](validation/0.1.16-shortcuts.json)
+
 ## 1. 十分钟了解项目
 
 2026-11-24 用户明确反馈「目前测试没有问题」并授权 GitHub 发布。保留各实现阶段的待验记录作为历史，当前用户结论见 `validation/0.1.14.json`；不要把用户一般反馈扩大为逐项测试矩阵全部通过。本次不改程序、不重测，用验收的同一 EXE 制作空 Data 发布包，附 [修复与 Data 升级说明](releases/0.1.14.md)。升级提醒面向下载用户：保存整个旧 Data 后复制到新版，同机同 Windows 用户无需重新配置；当前个人 Data 留在本机，不打入 Git 或 Release。
@@ -59,6 +67,8 @@
 | 前后端接口 | `src/bridge.ts`、`src-tauri/src/commands.rs` | `src/types.ts`、Rust `model.rs`、`lib.rs` 的命令注册、窗口权限 |
 | 连接、取消、重连、后台接受控制与退出 | `src-tauri/src/runtime.rs` | `engines/` 适配层、取消令牌、操作锁和组件生命周期 |
 | 皎月连协议、地址、Wintun 状态 | `src-tauri/src/engines/nat.rs` | `component-tools/EngineHost.cpp`、`GetPeerAddress.ps1`、引擎清单 |
+| IP 直连 | `src/pages/DirectPage.vue`、`src-tauri/src/runtime/direct.rs` | `runtime.rs` 的公共串流阶段、`ConfigureSunshineDirect.ps1`、历史和收藏重连 |
+| 官网签到 | `src-tauri/src/signin.rs` | `signin_status.rs`、`signin-login.js`、`signin-submit.js`、`src/stores/app.ts` |
 | Sunshine 账号、配置、配对、服务 | `src-tauri/src/engines/sunshine.rs` | `sunshine_service.rs`、`commands.rs`、中文路径与证书处理 |
 | 防火墙 | `component-tools/ConfigureSunshineVpn.ps1` | Rust 调用及警告/错误分离、Apply/Reapply/Restore 原生证据 |
 | Moonlight 配置和串流 | `engines/moonlight.rs`、`engines/moonlight_preferences.rs` | `third-party/moonlight-extension/`、`scripts/build-moonlight.mjs` |
@@ -71,6 +81,14 @@
 表中未写完整前缀的 Rust 文件均位于 `src-tauri/src/`。CSS 主要位于 `src/styles.css`、`src/app.css` 和组件内；参考设计在 `docs/LL远程-界面草图-V1.3.html` 及配套 CSS/JS 中。
 
 网页预览使用 `src/preview.ts`，桌面通过 Tauri 调用真实后端。不要用预览设备或模拟指标去解释实际登录、组网和串流状态。
+
+开发版的顶部栏、账号页和服务到期提示共用 `open_signin`。仅在用户点击后使用与当前已登录皎月连账号相符的凭据，通过官网表单的 HTTPS 端点登录。独立的无痕签到窗口没有应用命令权限，官网签到页加载后触发一次官方按钮，由官网处理滑块和显示结果。自动登录失败或凭据不可用时可以在同一窗口手动登录；LL 账号退出或重新登录后关闭原签到窗口。前端生产构建、Windows 调试构建及本地脚本模拟检查通过，真实账号签到待验收。
+
+用户随后确认一键签到功能正常。2026-11-27 起由用户打开的官方签到窗口读取「服务到期时间」和「下次可签到时间」，按北京时间解析并在个人 Data 按账号保存 `signin.json`。`get_signin_status` 读取本机记录，启动和账号切换不发起官网登录。面板用到期时间减系统时间显示剩余服务时长；没有日期时按到期处理，黄色按钮可进入官网读取。已读取的服务到期时间提前两小时触发黄色提醒。成功续期后按官网页面更新本机日期。
+
+同日修正「我的设备」与在线设备详情偶尔显示旧昵称或 Sunshine 名称的问题。目录刷新后显示 `account_host_name`，并在其下方单独显示备注。备注随已保存的设备身份保留，主机名或目录 ID 变化时继续按原有身份匹配规则衔接。历史、收藏及设备编辑器保留本机 `display_name`。主机名与目录 ID 同时变化且 Sunshine 身份未确认时，保留原设备备注，待身份确认后衔接。
+
+0.1.16 包含 2026-11-26 加入的公网和局域网 IP 直连。直连会话通过 `connect_direct` 启动，仅对指定 IP 探测 Sunshine，随后复用配对与串流。取消、失败、会话结束和断开时跳过皎月连组网清理。直连资料按当前设备资料范围保存，使用独立的设备身份匹配，避免覆盖已有组网地址。被控端直连与皎月连接受控制需先关闭当前模式再切换。直连防火墙脚本只管理本功能创建的 Sunshine 规则，关闭和退出按标记清理。局域网、公网与原皎月连流程的运行验收由用户执行。[用法与边界](连接流程与组网地址.md#ip-直连)
 
 ## 3. 数据和运行模式
 

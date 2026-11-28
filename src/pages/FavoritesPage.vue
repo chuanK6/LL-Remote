@@ -28,7 +28,7 @@ const cards = computed(() => devices.value.map(device => ({
     <div class="search-input"><Search :size="17" /><input v-model="query" class="text-input" aria-label="搜索设备" placeholder="搜索名称、备注或识别码" /></div>
     <button class="secondary icon-button" :disabled="app.loading" @click="app.refresh"><RefreshCw :size="15" :class="{ spinning: app.loading }" />刷新</button>
   </div>
-  <SavedDeviceList v-if="devices.length" :items="cards" :disabled="app.loading || app.busy" @delete="app.deleteSavedDevice" />
+  <SavedDeviceList v-if="devices.length" :items="cards" delete-label="删除设备和全部连接记录" :disabled="app.loading || app.busy" @delete="app.deleteSavedDevice" />
   <div v-else class="empty-state">
     <Star :size="54" :stroke-width="1.1" />
     <h2>{{ query ? '没有找到匹配设备' : '还没有收藏设备' }}</h2>

@@ -1,0 +1,44 @@
+{
+    "version":  "0.1.16",
+    "date":  "2026-11-27",
+    "timezone":  "Asia/Shanghai",
+    "status":  "Local portable build for user acceptance",
+    "changes":  [
+                    "LAN and public IP direct access from the same package on both computers",
+                    "Online host names follow the Jiaoyue account directory and identified devices retain their notes",
+                    "Official sign-in dates are saved per account, and remaining service time is calculated from the system clock",
+                    "Older account data without dates shows a sign-in reminder until the official dates are read"
+                ],
+    "nativeReleaseBuild":  "node scripts/tauri.mjs build --no-bundle --config src-tauri/tauri.release.conf.json",
+    "executableProductVersion":  "0.1.16",
+    "executableSha256":  "0b3d578add50085f528df41325dfc8ad3a74e11d28cdd6d0f729d827c4e68fe4",
+    "portableBundleVerification":  {
+                                       "checkedNativeBinaries":  138,
+                                       "bundledWebView2Binaries":  0,
+                                       "webview2Delivery":  "system-evergreen",
+                                       "nestedQtPluginsChecked":  true,
+                                       "pinnedComponentHashesMatch":  true,
+                                       "resourceFilesCompared":  1597,
+                                       "nsisBundleMarkerAccepted":  false,
+                                       "missingDependencies":  0,
+                                       "systemBaseline":  "Current local Windows; clean Windows acceptance deferred"
+                                   },
+    "runtimeTestsExecuted":  false,
+    "userAcceptancePending":  [
+                                  "LAN and publicly reachable direct connections",
+                                  "Original connection modes",
+                                  "Online host rename and note retention",
+                                  "Official sign-in date capture, renewal and restart"
+                              ],
+    "existingUserDataModified":  false,
+    "githubPublished":  false,
+    "delivery":  {
+                     "directory":  "release/LLRemote-Portable-x64-0.1.16",
+                     "archive":  "release/LLRemote-Portable-x64-0.1.16.zip",
+                     "checksum":  "release/LLRemote-Portable-x64-0.1.16.zip.sha256.txt",
+                     "bytes":  187774843,
+                     "sha256":  "b40080710fa3cc95cd436a17e15944419d95baadd51bcbe49095989d2aa51c13",
+                     "cleanData":  true,
+                     "temporaryPackageRemoved":  true
+                 }
+}

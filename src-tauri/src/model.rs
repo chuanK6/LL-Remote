@@ -151,6 +151,7 @@ pub enum SessionPatch {
 pub struct Preferences {
     pub prevent_sleep: bool,
     pub keep_display_awake: bool,
+    pub shortcuts: crate::shortcuts::Shortcuts,
     pub autostart: bool,
     // Existing explicit choices remain persisted; fresh installs close to tray.
     pub keep_running_in_tray_on_close: bool,
@@ -175,6 +176,7 @@ impl Default for Preferences {
         Self {
             prevent_sleep: true,
             keep_display_awake: false,
+            shortcuts: crate::shortcuts::Shortcuts::default(),
             autostart: false,
             keep_running_in_tray_on_close: true,
             remember_login: true,
@@ -292,6 +294,7 @@ pub struct Device {
     pub service_ready: Option<bool>,
     pub observed_at: Option<String>,
     pub last_connected_at: Option<String>,
+    pub history_fallback_hidden: bool,
     pub favorite: bool,
     pub note: String,
     pub wallpaper: Option<String>,
@@ -320,6 +323,7 @@ impl Default for Device {
             service_ready: None,
             observed_at: None,
             last_connected_at: None,
+            history_fallback_hidden: false,
             favorite: false,
             note: String::new(),
             wallpaper: None,
@@ -344,6 +348,9 @@ impl Device {
                 .as_ref()
                 .is_some_and(|value| !value.trim().is_empty())
         };
+        if (self.source == "direct") != (other.source == "direct") {
+            return false;
+        }
         if confirmed_uuid(self) && confirmed_uuid(other) {
             return equal(&self.uuid, &other.uuid);
         }
@@ -487,10 +494,26 @@ pub struct AppSnapshot {
     pub devices: Vec<Device>,
     pub history: Vec<HistoryEntry>,
     pub sunshine: SunshineStatus,
+    pub direct_acceptance: Option<DirectAcceptanceStatus>,
     pub session: SessionSnapshot,
     pub components: Vec<ComponentStatus>,
     pub power_status: String,
     pub storage_warning: Option<String>,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub enum DirectAccess {
+    Lan,
+    Internet,
+}
+
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DirectAcceptanceStatus {
+    pub access: DirectAccess,
+    pub address: String,
+    pub port: u16,
 }
 
 #[derive(Clone, Deserialize)]

@@ -1,4 +1,5 @@
 import { version } from '../package.json'
+import { defaultShortcuts, type Shortcuts } from './shortcuts'
 
 export interface AppError { code: string; message: string; retryable: boolean; reauthenticate: boolean }
 export type MouseMode = 'game' | 'office'
@@ -14,6 +15,7 @@ export interface GeneralPreferences {
   rememberLogin: boolean; autoRetry: boolean; alwaysAcceptControl: boolean; automaticRoleSwitch: boolean; showFloatBall: boolean; reuseExisting: boolean
 }
 export interface Preferences extends GeneralPreferences {
+  shortcuts: Shortcuts
   acceptControl: boolean
   showPerformanceMonitor: boolean
   setupComplete: boolean; onboardingComplete: boolean; firstConnectionComplete: boolean; sunshineUsername: string | null; moonlightImported: boolean; stream: StreamPreferences
@@ -24,12 +26,20 @@ export interface Account {
   localVpnAddress: string | null
   serverRunning: boolean; protocolSupported: boolean
 }
+export interface SigninStatus {
+  username: string
+  expiresAt: string | null
+  availableAt: string | null
+}
+export type DirectAccess = 'lan' | 'internet'
+export interface DirectAcceptance { access: DirectAccess; address: string; port: number }
 export interface PublishedApp { id: string; name: string }
 export interface Device {
   id: string; hostName: string; displayName: string; source: string; natId: string | null
   accountHostName?: string | null
   uuid: string | null; address: string | null; peerCode: string | null
   status: string; networkConnected: boolean; accountOnline?: boolean; serviceReady: boolean | null; observedAt: string | null; lastConnectedAt: string | null
+  historyFallbackHidden?: boolean
   favorite: boolean; note: string; wallpaper: string | null; credentialRef: string | null
   credentialState: string; preferences: StreamPreferences; apps: PublishedApp[]; quickApps: string[]
 }
@@ -61,10 +71,11 @@ export interface IncomingControl {
 export interface AppSnapshot {
   version: string; portable: boolean; dataDirectory: string; preferences: Preferences; account: Account
   devices: Device[]; history: HistoryEntry[]; sunshine: SunshineStatus; session: SessionSnapshot
+  directAcceptance?: DirectAcceptance | null
   components: ComponentStatus[]; powerStatus: string; storageWarning: string | null
 }
 export interface DeviceEdit { deviceId: string; displayName: string; favorite: boolean; note: string; wallpaperPath: string | null; resetWallpaper: boolean }
-export interface ConnectRequest { deviceId?: string; peerCode?: string; password?: string; app?: string; address?: string }
+export interface ConnectRequest { deviceId?: string; peerCode?: string; password?: string; app?: string; address?: string; direct?: boolean }
 export type SessionPatch =
   | { kind: 'resolution'; width: number; height: number }
   | { kind: 'bitrate'; bitrateKbps: number }
@@ -75,7 +86,7 @@ export type SessionPatch =
 export interface Diagnostic { name: string; status: string; detail: string }
 
 export const defaultStream = (): StreamPreferences => ({ width: 1920, height: 1080, fps: 60, bitrateKbps: 15000, codec: 'auto', windowMode: 'windowed', mouseMode: 'office', audioConfig: 'stereo', hostAudio: false, volume: 75, muted: false, audioDevice: '', captureKeys: 'fullscreen', gamepad: true })
-export const defaultPreferences = (): Preferences => ({ preventSleep: true, keepDisplayAwake: false, autostart: false, keepRunningInTrayOnClose: true, rememberLogin: true, autoRetry: true, acceptControl: false, alwaysAcceptControl: false, automaticRoleSwitch: false, showPerformanceMonitor: false, showFloatBall: true, setupComplete: false, onboardingComplete: false, firstConnectionComplete: false, sunshineUsername: null, reuseExisting: true, moonlightImported: false, stream: defaultStream() })
+export const defaultPreferences = (): Preferences => ({ preventSleep: true, keepDisplayAwake: false, shortcuts: defaultShortcuts(), autostart: false, keepRunningInTrayOnClose: true, rememberLogin: true, autoRetry: true, acceptControl: false, alwaysAcceptControl: false, automaticRoleSwitch: false, showPerformanceMonitor: false, showFloatBall: true, setupComplete: false, onboardingComplete: false, firstConnectionComplete: false, sunshineUsername: null, reuseExisting: true, moonlightImported: false, stream: defaultStream() })
 export const emptyMetrics = (): Metrics => ({ fps: null, bitrateMbps: null, networkMs: null, decodeMs: null, renderMs: null, droppedPercent: null, updatedAt: null })
 export const emptySession = (): SessionSnapshot => ({ id: null, deviceId: null, deviceName: null, stage: 'idle', attempt: 0, app: null, pin: null, error: null, preferences: null, startedAt: null, metrics: emptyMetrics(), extensionAvailable: false, localAcceptancePaused: false })
 export const emptySnapshot = (): AppSnapshot => ({ version, portable: false, dataDirectory: '', preferences: defaultPreferences(), account: { username: null, authenticated: false, quotaMinutes: null, quotaState: 'unknown', updatedAt: null, localCode: null, localName: null, localVpnAddress: null, serverRunning: false, protocolSupported: false }, devices: [], history: [], sunshine: { running: false, ready: false, accountInitialized: false, accountUsername: null, credentialValid: false, external: false, port: 47990, locale: 'zh', apps: [], pendingPairings: [], config: { outputName: '', audioSink: '', adapterName: '' } }, session: emptySession(), components: [], powerStatus: '正在检查', storageWarning: null })

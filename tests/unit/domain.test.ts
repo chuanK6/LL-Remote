@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { formatTime, normalizeError, patchStream, quotaLabel, validateStream } from '../../src/domain'
+import { formatTime, normalizeError, onlineDeviceName, patchStream, quotaLabel, remainingServiceMinutes, signinState, validateStream } from '../../src/domain'
+import type { Device } from '../../src/types'
 import { defaultStream, emptySnapshot } from '../../src/types'
 
 describe('连接与设备偏好', () => {
@@ -25,5 +26,25 @@ describe('连接与设备偏好', () => {
   it('校验原内核允许的帧率并使用客户端时区显示日期', () => {
     expect(validateStream({ ...defaultStream(), fps: 1 })).toBeTruthy()
     expect(formatTime('2026-11-21T01:00:00Z')).toContain('09:00')
+  })
+  it('在服务到期前两小时切换签到状态，读取不到到期时间时采用官网签到时间', () => {
+    const status = { username: 'fixture', expiresAt: '2026-11-27T13:00:00+08:00', availableAt: '2026-11-27T11:00:00+08:00' }
+    expect(signinState(status, Date.parse('2026-11-27T10:59:59+08:00'))).toBe('active')
+    expect(signinState(status, Date.parse('2026-11-27T11:00:00+08:00'))).toBe('available')
+    expect(signinState(status, Date.parse('2026-11-27T13:05:00+08:00'))).toBe('available')
+    expect(signinState({ ...status, expiresAt: null }, Date.parse('2026-11-27T10:59:59+08:00'))).toBe('active')
+    expect(signinState({ ...status, expiresAt: null }, Date.parse('2026-11-27T11:00:00+08:00'))).toBe('available')
+    expect(signinState(null, 0)).toBe('unknown')
+  })
+  it('用系统时间计算服务时长并钳制为零', () => {
+    const expiresAt = '2026-11-27T13:00:00+08:00'
+    expect(remainingServiceMinutes(expiresAt, Date.parse('2026-11-27T11:00:00+08:00'))).toBe(120)
+    expect(remainingServiceMinutes(expiresAt, Date.parse('2026-11-27T13:01:00+08:00'))).toBe(0)
+    expect(remainingServiceMinutes(null, 0)).toBe(0)
+  })
+  it('在线设备使用目录主机名，保留已有显示名称用于历史和收藏', () => {
+    const device = { accountHostName: '当前皎月连主机名', hostName: 'Sunshine 名称', displayName: '旧昵称' } as Device
+    expect(onlineDeviceName(device)).toBe('当前皎月连主机名')
+    expect(device.displayName).toBe('旧昵称')
   })
 })

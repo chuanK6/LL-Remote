@@ -1,0 +1,35 @@
+{
+    "version":  "0.1.15",
+    "candidate":  "IP direct preview",
+    "date":  "2026-11-26",
+    "timezone":  "Asia/Shanghai",
+    "status":  "Built for user functional acceptance. Same portable package for both roles.",
+    "nativeReleaseBuild":  "node scripts/tauri.mjs build --no-bundle --config src-tauri/tauri.release.conf.json",
+    "executableSha256":  "ef9e9fa29ec099863c63f43c0fc8d0af4270e2e3ac700415fa51d11a646bc3f8",
+    "portableBundleVerification":  {
+                                       "checkedNativeBinaries":  138,
+                                       "bundledWebView2Binaries":  0,
+                                       "webview2Delivery":  "system-evergreen",
+                                       "nestedQtPluginsChecked":  true,
+                                       "pinnedComponentHashesMatch":  true,
+                                       "resourceFilesCompared":  1597,
+                                       "nsisBundleMarkerAccepted":  false,
+                                       "missingDependencies":  0,
+                                       "systemBaseline":  "Current local Windows; clean Windows acceptance deferred"
+                                   },
+    "directFirewallHelper":  "PowerShell syntax and Windows cmdlet parameter checks passed. Packaging hash matches the workspace source.",
+    "runtimeTestsExecuted":  false,
+    "userAcceptancePending":  [
+                                  "LAN direct address and PIN pairing",
+                                  "Public IPv4 forwarding or reachable IPv6",
+                                  "Existing account and access-code connection regressions"
+                              ],
+    "officialReleaseUpdated":  false,
+    "delivery":  {
+                     "archive":  "release/LLRemote-Portable-x64-0.1.15-IP-Direct-Preview.zip",
+                     "bytes":  188490891,
+                     "sha256":  "ee9b0b2179c3613735218e6ce9e65b4f6fe8caa4d47f5ac76fdce8c1e91acac5",
+                     "cleanData":  true,
+                     "temporaryPackageRemoved":  true
+                 }
+}

@@ -22,5 +22,9 @@ html,body,#app{height:100%;overflow:hidden}.shell{min-height:660px;min-width:900
   border-bottom: 1px solid var(--line);
 }
 .settings-groups > .page-section > .setting-row:last-child { border-bottom: 0; }
+button[data-signin="active"] { background: #dff3e6; border-color: #9accaa; color: #246840; }
+button[data-signin="active"]:hover { background: #ccebd7; }
+button[data-signin="available"] { background: #ffedab; border-color: #e8c158; color: #694c00; }
+button[data-signin="available"]:hover { background: #ffe58a; }
 .onboarding-button{height:30px;padding:0 12px;border:1px solid #b9d5fc;border-radius:5px;background:#edf5ff;color:#2879dd;font-size:12px;white-space:nowrap}.onboarding-button:hover{background:#dfeeff}.setup-stepper .complete{color:#2a9366}
 .advanced-row{color:#c72b36;font-size:13px;font-weight:400;line-height:1.5;padding:8px 0 12px;gap:10px}.advanced-row .advanced-button{color:#c72b36;background:#fff4f4;border:1px solid #db7078;border-radius:5px;padding:5px 12px;font-size:13px;font-weight:400}.advanced-row .advanced-button:hover{background:#ffe8e9}

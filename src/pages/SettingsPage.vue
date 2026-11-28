@@ -7,6 +7,7 @@ import { ROLE_SWITCH_DESCRIPTION } from '../role-switch'
 import PageHeading from '../components/PageHeading.vue'
 import SettingRow from '../components/SettingRow.vue'
 import ToggleSwitch from '../components/ToggleSwitch.vue'
+import ShortcutSettings from '../components/ShortcutSettings.vue'
 
 const app = useAppStore()
 const router = useRouter()
@@ -33,10 +34,11 @@ function save(key: keyof GeneralPreferences, value: boolean) {
     <SettingRow label="防止电脑自动休眠" :detail="`运行及托盘期间有效。当前状态：${app.snapshot.powerStatus}`">
       <ToggleSwitch :model-value="app.snapshot.preferences.preventSleep" label="防止电脑自动休眠" :disabled="!native || app.loading" @update:model-value="save('preventSleep', $event)"/>
     </SettingRow>
-    <SettingRow label="保持显示器常亮" detail="开启时保持显示器与电脑唤醒。">
+    <SettingRow label="保持显示器常亮" detail="开启时防止 Windows 自动关闭显示器。若被控电脑熄屏后首次远控出现黑屏，可开启此项复查。">
       <ToggleSwitch :model-value="app.snapshot.preferences.keepDisplayAwake" label="保持显示器常亮" :disabled="!native || app.loading" @update:model-value="save('keepDisplayAwake', $event)"/>
     </SettingRow>
   </section>
+  <ShortcutSettings />
   <section class="page-section">
     <h2>账号与登录</h2>
     <SettingRow label="记住账号登录" detail="登录凭据由当前 Windows 用户加密保存。">

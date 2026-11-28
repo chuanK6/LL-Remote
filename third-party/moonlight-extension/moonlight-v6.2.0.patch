@@ -333,10 +333,29 @@ index 9ce494a..55fe7b2 100644
          SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
                       "Failed to open audio device: %s",
 diff --git a/app/streaming/input/input.cpp b/app/streaming/input/input.cpp
-index 2597f99..af1941e 100644
+index 2597f99..de36b52 100644
 --- a/app/streaming/input/input.cpp
 +++ b/app/streaming/input/input.cpp
-@@ -276,7 +276,10 @@ void SdlInputHandler::notifyFocusLost()
+@@ -8,6 +8,8 @@
+ #include <QtGlobal>
+ #include <QDir>
+ #include <QGuiApplication>
++#include <QJsonDocument>
++#include <QJsonObject>
+ 
+ SdlInputHandler::SdlInputHandler(StreamingPreferences& prefs, int streamWidth, int streamHeight)
+     : m_MultiController(prefs.multiController),
+@@ -134,6 +136,9 @@ SdlInputHandler::SdlInputHandler(StreamingPreferences& prefs, int streamWidth, i
+     m_SpecialKeyCombos[KeyComboToggleKeyboardGrab].keyCode = SDLK_k;
+     m_SpecialKeyCombos[KeyComboToggleKeyboardGrab].scanCode = SDL_SCANCODE_K;
+     m_SpecialKeyCombos[KeyComboToggleKeyboardGrab].enabled = WMUtils::isRunningDesktopEnvironment();
++    if (qEnvironmentVariableIsSet("LLREMOTE_SHORTCUTS")) {
++        llRemoteSetShortcuts(QJsonDocument::fromJson(qgetenv("LLREMOTE_SHORTCUTS")).object());
++    }
+ 
+     m_OldIgnoreDevices = SDL_GetHint(SDL_HINT_GAMECONTROLLER_IGNORE_DEVICES);
+     m_OldIgnoreDevicesExcept = SDL_GetHint(SDL_HINT_GAMECONTROLLER_IGNORE_DEVICES_EXCEPT);
+@@ -276,7 +281,10 @@ void SdlInputHandler::notifyFocusLost()
      // This lets user to interact with our window's title bar and with the buttons in it.
      // Doing this while the window is full-screen breaks the transition out of FS
      // (desktop and exclusive), so we must check for that before releasing mouse capture.
@@ -348,7 +367,7 @@ index 2597f99..af1941e 100644
          setCaptureActive(false);
      }
  
-@@ -354,9 +357,12 @@ void SdlInputHandler::setCaptureActive(bool active)
+@@ -354,9 +362,12 @@ void SdlInputHandler::setCaptureActive(bool active)
  {
      if (active) {
          // If we're in relative mode, try to activate SDL's relative mouse mode
@@ -365,10 +384,24 @@ index 2597f99..af1941e 100644
          }
  
 diff --git a/app/streaming/input/input.h b/app/streaming/input/input.h
-index 151c69c..6df731e 100644
+index 151c69c..6a691ee 100644
 --- a/app/streaming/input/input.h
 +++ b/app/streaming/input/input.h
-@@ -145,6 +145,13 @@ public:
+@@ -5,6 +5,8 @@
+ 
+ #include "SDL_compat.h"
+ 
++class QJsonObject;
++
+ struct GamepadState {
+     SDL_GameController* controller;
+     SDL_JoystickID jsId;
+@@ -141,10 +143,18 @@ public:
+     void notifyFocusGained();
+ 
+     bool isCaptureActive();
++    void llRemoteSetShortcuts(const QJsonObject& shortcuts);
+ 
      bool isSystemKeyCaptureActive();
  
      void setCaptureActive(bool active);
@@ -382,6 +415,94 @@ index 151c69c..6df731e 100644
  
      bool isMouseInVideoRegion(int mouseX, int mouseY, int windowWidth = -1, int windowHeight = -1);
  
+@@ -186,6 +196,12 @@ private:
+ 
+     void handleRelativeFingerEvent(SDL_TouchFingerEvent* event);
+ 
++    bool llRemoteHandleShortcut(const SDL_KeyboardEvent* event);
++    struct LlRemoteShortcut {
++        SDL_Keycode key;
++        Uint16 modifiers;
++    } m_LlRemoteShortcuts[3]{};
++    SDL_Scancode m_LlRemoteShortcutRelease = SDL_SCANCODE_UNKNOWN;
+     void performSpecialKeyCombo(KeyCombo combo);
+ 
+     static
+diff --git a/app/streaming/input/keyboard.cpp b/app/streaming/input/keyboard.cpp
+index 29e218d..d5f123e 100644
+--- a/app/streaming/input/keyboard.cpp
++++ b/app/streaming/input/keyboard.cpp
+@@ -2,6 +2,8 @@
+ 
+ #include <Limelight.h>
+ #include "SDL_compat.h"
++#include <QJsonObject>
++#include <cstdio>
+ 
+ #define VK_0 0x30
+ #define VK_A 0x41
+@@ -182,6 +184,52 @@ void SdlInputHandler::performSpecialKeyCombo(KeyCombo combo)
+     }
+ }
+ 
++void SdlInputHandler::llRemoteSetShortcuts(const QJsonObject& shortcuts)
++{
++    const char* actions[] = {"mouse", "disconnect", "display"};
++    for (int i = 0; i < 3; ++i) {
++        const auto binding = shortcuts[actions[i]].toObject();
++        const auto key = binding["key"].toString().toLatin1();
++        m_LlRemoteShortcuts[i] = {SDL_GetKeyFromName(key.constData()), static_cast<Uint16>(
++            (binding["ctrl"].toBool() ? 1 : 0) |
++            (binding["alt"].toBool() ? 2 : 0) |
++            (binding["shift"].toBool() ? 4 : 0))};
++    }
++    m_SpecialKeyCombos[KeyComboUngrabInput].enabled = false;
++    m_SpecialKeyCombos[KeyComboToggleMinimize].enabled = false;
++    m_SpecialKeyCombos[KeyComboTogglePointerRegionLock].enabled = false;
++}
++
++bool SdlInputHandler::llRemoteHandleShortcut(const SDL_KeyboardEvent* event)
++{
++    if (event->state == SDL_RELEASED && m_LlRemoteShortcutRelease != SDL_SCANCODE_UNKNOWN &&
++        event->keysym.scancode == m_LlRemoteShortcutRelease) {
++        m_LlRemoteShortcutRelease = SDL_SCANCODE_UNKNOWN;
++        return true;
++    }
++    if (event->state != SDL_PRESSED || (event->keysym.mod & KMOD_GUI)) return false;
++    const auto mods = event->keysym.mod;
++    const Uint16 modifierMask = (mods & KMOD_CTRL ? 1 : 0) |
++                               (mods & KMOD_ALT ? 2 : 0) |
++                               (mods & KMOD_SHIFT ? 4 : 0);
++    for (int i = 0; i < 3; ++i) {
++        const auto& binding = m_LlRemoteShortcuts[i];
++        if (binding.key == SDLK_UNKNOWN || binding.modifiers != modifierMask ||
++            (event->keysym.sym != binding.key && event->keysym.scancode != SDL_GetScancodeFromKey(binding.key))) continue;
++
++        m_LlRemoteShortcutRelease = event->keysym.scancode;
++        if (i == 0) {
++            performSpecialKeyCombo(KeyComboUngrabInput);
++        } else {
++            raiseAllKeys();
++            fputs(i == 1 ? "LLREMOTE_SHORTCUT_DISCONNECT\n" : "LLREMOTE_SHORTCUT_DISPLAY\n", stdout);
++            fflush(stdout);
++        }
++        return true;
++    }
++    return false;
++}
++
+ void SdlInputHandler::handleKeyEvent(SDL_KeyboardEvent* event)
+ {
+     short keyCode;
+@@ -195,6 +243,8 @@ void SdlInputHandler::handleKeyEvent(SDL_KeyboardEvent* event)
+         return;
+     }
+ 
++    if (llRemoteHandleShortcut(event)) return;
++
+     // Check for our special key combos
+     if ((event->state == SDL_PRESSED) &&
+             (event->keysym.mod & KMOD_CTRL) &&
 diff --git a/app/streaming/input/mouse.cpp b/app/streaming/input/mouse.cpp
 index c5bd1fd..41fe0e8 100644
 --- a/app/streaming/input/mouse.cpp
@@ -398,7 +519,7 @@ index c5bd1fd..41fe0e8 100644
          SDL_Rect src, dst;
  
 diff --git a/app/streaming/session.cpp b/app/streaming/session.cpp
-index 40c1e59..6d0d68a 100644
+index 40c1e59..00bb9d9 100644
 --- a/app/streaming/session.cpp
 +++ b/app/streaming/session.cpp
 @@ -1,4 +1,7 @@
@@ -519,7 +640,7 @@ index 40c1e59..6d0d68a 100644
      m_InputHandler->setCaptureActive(false);
      SDL_EnableScreenSaver();
      SDL_SetHint(SDL_HINT_TIMER_RESOLUTION, "0");
-@@ -2377,3 +2425,69 @@ DispatchDeferredCleanup:
+@@ -2377,3 +2425,72 @@ DispatchDeferredCleanup:
      // reference.
      QThreadPool::globalInstance()->start(new DeferredSessionCleanupTask(this));
  }
@@ -535,14 +656,17 @@ index 40c1e59..6d0d68a 100644
 +    }
 +    if (action == "input") {
 +        m_InputHandler->raiseAllKeys();
-+        // Leave the local pointer free. Clicking the stream recaptures it.
-+        m_InputHandler->setCaptureActive(false);
++        m_InputHandler->setCaptureActive(payload["toggle"].toBool() && !m_InputHandler->isCaptureActive());
 +        return true;
 +    }
 +    if (action != "apply") return false;
 +    const auto patch = payload["patch"].toObject();
 +    const auto preferences = payload["preferences"].toObject();
 +    const auto kind = patch["kind"].toString();
++    if (kind == "shortcuts") {
++        m_InputHandler->llRemoteSetShortcuts(payload["shortcuts"].toObject());
++        return true;
++    }
 +    if (kind == "mouse") {
 +        const bool absolute = preferences["mouseMode"].toString() == "office";
 +        m_Preferences->absoluteMouseMode = absolute;

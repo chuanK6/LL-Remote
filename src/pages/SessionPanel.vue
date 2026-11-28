@@ -130,7 +130,7 @@ onBeforeUnmount(() => { clearInterval(polling); stopListening?.(); stopFocusList
 <template>
   <div class="session-surface" @click.self="layout(false)" @keydown.esc.prevent="layout(false)">
     <button v-if="!expanded" class="session-ball" :data-edge="dragging ? undefined : dockedEdge" aria-label="打开会话悬浮球设置"
-      :title="error || '会话设置 · Ctrl+Alt+Shift+Z 释放游戏鼠标'" :disabled="layingOut"
+      :title="error || '会话设置'" :disabled="layingOut"
       @click="openPanel" @pointerdown="startDrag" @pointermove="drag"
       @pointerup="finishDrag" @pointercancel="finishDrag" @lostpointercapture="finishDrag"><span>LL</span></button>
     <section v-else class="session-settings" aria-label="本次远控设置">

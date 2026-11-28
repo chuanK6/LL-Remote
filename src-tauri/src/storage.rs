@@ -67,7 +67,7 @@ fn write_atomic(path: &Path, bytes: &[u8], preserve_previous: bool) -> Result<()
     result
 }
 
-fn read_json<T: serde::de::DeserializeOwned + Default>(path: &Path) -> Result<(T, bool)> {
+pub(crate) fn read_json<T: serde::de::DeserializeOwned + Default>(path: &Path) -> Result<(T, bool)> {
     if !path.exists() {
         return Ok((T::default(), false));
     }
@@ -107,13 +107,15 @@ impl Store {
     pub fn open(root: PathBuf) -> Result<Self> {
         fs::create_dir_all(&root)?;
         let (preferences, recovered) = read_json(&root.join("preferences.json"))?;
-        Ok(Self {
+        let mut store = Self {
             root,
             preferences,
             account_data: AccountData::default(),
-            account_scope: "unassigned".into(),
+            account_scope: String::new(),
             warning: recovered.then(|| "偏好文件损坏，已读取上一份备份。".into()),
-        })
+        };
+        store.switch_account(None)?;
+        Ok(store)
     }
     pub fn switch_account(&mut self, username: Option<&str>) -> Result<()> {
         let scope = username
@@ -184,13 +186,7 @@ impl Store {
         let mut account = self.account_data.clone();
         account.devices.retain(|candidate| candidate.id != id);
         account.history.retain(|entry| entry.device_id.as_deref() != Some(id));
-        let path = self.root.join("accounts").join(&self.account_scope).join("devices.json");
-        let bytes = serde_json::to_vec_pretty(&account)?;
-        // Hard deletion must also remove the record from recovery data. Write
-        // the sanitized backup first; neither write preserves the deleted row.
-        write_atomic(&path.with_extension("bak"), &bytes, false)?;
-        write_atomic(&path, &bytes, false)?;
-        self.account_data = account;
+        self.save_deletion(account)?;
         let credential_result = credential.map(|reference| Vault::new(&self.root).delete(reference)).transpose();
         let wallpaper_result = wallpaper.map(|path| match fs::remove_file(path) {
             Err(error) if error.kind() != std::io::ErrorKind::NotFound => Err(AppError::from(error)),
@@ -198,6 +194,36 @@ impl Store {
         }).transpose();
         credential_result?;
         wallpaper_result?;
+        Ok(())
+    }
+
+    pub fn remove_history_entry(&mut self, id: &str) -> Result<()> {
+        let mut account = self.account_data.clone();
+        let device_id = if let Some(index) = account.history.iter().position(|entry| entry.id == id) {
+            account.history.remove(index).device_id
+        } else if let Some(device_id) = id.strip_prefix("saved-") {
+            if account.history.iter().any(|entry| entry.device_id.as_deref() == Some(device_id)) {
+                return Ok(());
+            }
+            Some(device_id.to_owned())
+        } else {
+            return Ok(());
+        };
+        if let Some(device) = account.devices.iter_mut().find(|device| device_id.as_ref() == Some(&device.id)) {
+            device.history_fallback_hidden = true;
+        } else if id.starts_with("saved-") {
+            return Ok(());
+        }
+        self.save_deletion(account)
+    }
+
+    fn save_deletion(&mut self, account: AccountData) -> Result<()> {
+        let path = self.root.join("accounts").join(&self.account_scope).join("devices.json");
+        let bytes = serde_json::to_vec_pretty(&account)?;
+        // Write sanitized recovery data first so recovery never restores deleted rows.
+        write_atomic(&path.with_extension("bak"), &bytes, false)?;
+        write_atomic(&path, &bytes, false)?;
+        self.account_data = account;
         Ok(())
     }
 
@@ -408,6 +434,7 @@ impl Store {
                 }
             }
             current.favorite |= incoming.favorite || matches.iter().any(|d| d.favorite);
+            current.history_fallback_hidden |= incoming.history_fallback_hidden || matches.iter().any(|d| d.history_fallback_hidden);
             if current.wallpaper.is_none() {
                 current.wallpaper = matches
                     .iter()

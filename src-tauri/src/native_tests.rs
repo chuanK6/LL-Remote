@@ -233,7 +233,10 @@ async fn check_stream_controls(
         uuid::Uuid::new_v4().simple(),
         uuid::Uuid::new_v4().simple()
     );
-    let mut stream = moonlight.spawn_stream(address, None, "Desktop", &preferences, &pipe, &token)?;
+    let mut stream = moonlight.spawn_stream(
+        address, None, "Desktop", &preferences, &pipe, &token,
+        &crate::shortcuts::Shortcuts::default(),
+    )?;
     let pid = stream.child.id().unwrap();
     tokio::time::timeout(Duration::from_secs(30), async {
         while !stream.verified.load(Ordering::SeqCst) {

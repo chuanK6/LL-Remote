@@ -7,6 +7,7 @@ import FavoritesPage from './pages/FavoritesPage.vue'
 import SetupPage from './pages/SetupPage.vue'
 import AppsPage from './pages/AppsPage.vue'
 import AssistPage from './pages/AssistPage.vue'
+import DirectPage from './pages/DirectPage.vue'
 import AccountPage from './pages/AccountPage.vue'
 import SettingsPage from './pages/SettingsPage.vue'
 import DiagnosticsPage from './pages/DiagnosticsPage.vue'
@@ -26,6 +27,7 @@ export const router = createRouter({
     { path: '/login', name: 'login', component: SetupPage },
     { path: '/app/:app', name: 'apps', component: AppsPage },
     { path: '/assist', name: 'assist', component: AssistPage },
+    { path: '/direct', name: 'direct', component: DirectPage },
     { path: '/account', name: 'account', component: AccountPage },
     { path: '/settings', name: 'settings', component: SettingsPage },
     { path: '/diagnostics', name: 'diagnostics', component: DiagnosticsPage },

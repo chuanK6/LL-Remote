@@ -454,6 +454,34 @@ fn account_directory_name_continuity_survives_sunshine_name_and_connection_sourc
 }
 
 #[test]
+fn renamed_online_host_keeps_its_note_and_saved_identity() {
+    let (_root, mut store, _source) = wallpaper_fixture();
+    let saved = &mut store.account_data.devices[0];
+    saved.source = "account".into();
+    saved.nat_id = Some("native-id".into());
+    saved.account_host_name = Some("Old name".into());
+    saved.host_name = "Sunshine name".into();
+    saved.display_name = "Saved display name".into();
+    saved.note = "Office".into();
+    saved.uuid = Some("confirmed-host".into());
+
+    store.merge_account_directory(vec![account_directory_device("native-id", "New name", None)]);
+    let renamed = store.device("device").unwrap();
+    assert_eq!(renamed.account_host_name.as_deref(), Some("New name"));
+    assert_eq!(renamed.note, "Office");
+    assert_eq!(renamed.display_name, "Saved display name");
+
+    store.merge_account_directory(vec![
+        account_directory_device("reconnected-id", "Latest name", Some("confirmed-host")),
+        account_directory_device("another-id", "Latest name", Some("different-host")),
+    ]);
+    let renamed = store.device("device").unwrap();
+    assert_eq!(renamed.account_host_name.as_deref(), Some("Latest name"));
+    assert_eq!(renamed.note, "Office");
+    assert!(store.account_data.devices.iter().find(|device| device.nat_id.as_deref() == Some("another-id")).unwrap().note.is_empty());
+}
+
+#[test]
 fn repeated_connections_with_new_native_ids_update_one_confirmed_device() {
     let root = tempfile::tempdir().unwrap();
     let mut store = Store::open(root.path().into()).unwrap();

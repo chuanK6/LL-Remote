@@ -9,14 +9,17 @@ bool Session::llRemoteRequest(const QJsonObject& request)
     }
     if (action == "input") {
         m_InputHandler->raiseAllKeys();
-        // Leave the local pointer free. Clicking the stream recaptures it.
-        m_InputHandler->setCaptureActive(false);
+        m_InputHandler->setCaptureActive(payload["toggle"].toBool() && !m_InputHandler->isCaptureActive());
         return true;
     }
     if (action != "apply") return false;
     const auto patch = payload["patch"].toObject();
     const auto preferences = payload["preferences"].toObject();
     const auto kind = patch["kind"].toString();
+    if (kind == "shortcuts") {
+        m_InputHandler->llRemoteSetShortcuts(payload["shortcuts"].toObject());
+        return true;
+    }
     if (kind == "mouse") {
         const bool absolute = preferences["mouseMode"].toString() == "office";
         m_Preferences->absoluteMouseMode = absolute;

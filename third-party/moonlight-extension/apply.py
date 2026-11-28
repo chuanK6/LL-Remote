@@ -248,6 +248,71 @@ replace('app/streaming/input/input.h', '    void setCaptureActive(bool active);'
         if (captured) setCaptureActive(true);
         updatePointerRegionLock();
     }''')
+replace('app/streaming/input/input.h', '#include "SDL_compat.h"', '#include "SDL_compat.h"\n\nclass QJsonObject;')
+replace('app/streaming/input/input.h', '    bool isCaptureActive();', '    bool isCaptureActive();\n    void llRemoteSetShortcuts(const QJsonObject& shortcuts);')
+replace('app/streaming/input/input.h', '    void performSpecialKeyCombo(KeyCombo combo);', '''    bool llRemoteHandleShortcut(const SDL_KeyboardEvent* event);
+    struct LlRemoteShortcut {
+        SDL_Keycode key;
+        Uint16 modifiers;
+    } m_LlRemoteShortcuts[3]{};
+    SDL_Scancode m_LlRemoteShortcutRelease = SDL_SCANCODE_UNKNOWN;
+    void performSpecialKeyCombo(KeyCombo combo);''')
+replace('app/streaming/input/input.cpp', '#include <QGuiApplication>', '#include <QGuiApplication>\n#include <QJsonDocument>\n#include <QJsonObject>')
+replace('app/streaming/input/input.cpp', '    m_SpecialKeyCombos[KeyComboToggleKeyboardGrab].enabled = WMUtils::isRunningDesktopEnvironment();', '''    m_SpecialKeyCombos[KeyComboToggleKeyboardGrab].enabled = WMUtils::isRunningDesktopEnvironment();
+    if (qEnvironmentVariableIsSet("LLREMOTE_SHORTCUTS")) {
+        llRemoteSetShortcuts(QJsonDocument::fromJson(qgetenv("LLREMOTE_SHORTCUTS")).object());
+    }''')
+replace('app/streaming/input/keyboard.cpp', '#include "SDL_compat.h"', '#include "SDL_compat.h"\n#include <QJsonObject>\n#include <cstdio>')
+replace('app/streaming/input/keyboard.cpp', 'void SdlInputHandler::handleKeyEvent(SDL_KeyboardEvent* event)', '''void SdlInputHandler::llRemoteSetShortcuts(const QJsonObject& shortcuts)
+{
+    const char* actions[] = {"mouse", "disconnect", "display"};
+    for (int i = 0; i < 3; ++i) {
+        const auto binding = shortcuts[actions[i]].toObject();
+        const auto key = binding["key"].toString().toLatin1();
+        m_LlRemoteShortcuts[i] = {SDL_GetKeyFromName(key.constData()), static_cast<Uint16>(
+            (binding["ctrl"].toBool() ? 1 : 0) |
+            (binding["alt"].toBool() ? 2 : 0) |
+            (binding["shift"].toBool() ? 4 : 0))};
+    }
+    m_SpecialKeyCombos[KeyComboUngrabInput].enabled = false;
+    m_SpecialKeyCombos[KeyComboToggleMinimize].enabled = false;
+    m_SpecialKeyCombos[KeyComboTogglePointerRegionLock].enabled = false;
+}
+
+bool SdlInputHandler::llRemoteHandleShortcut(const SDL_KeyboardEvent* event)
+{
+    if (event->state == SDL_RELEASED && m_LlRemoteShortcutRelease != SDL_SCANCODE_UNKNOWN &&
+        event->keysym.scancode == m_LlRemoteShortcutRelease) {
+        m_LlRemoteShortcutRelease = SDL_SCANCODE_UNKNOWN;
+        return true;
+    }
+    if (event->state != SDL_PRESSED || (event->keysym.mod & KMOD_GUI)) return false;
+    const auto mods = event->keysym.mod;
+    const Uint16 modifierMask = (mods & KMOD_CTRL ? 1 : 0) |
+                               (mods & KMOD_ALT ? 2 : 0) |
+                               (mods & KMOD_SHIFT ? 4 : 0);
+    for (int i = 0; i < 3; ++i) {
+        const auto& binding = m_LlRemoteShortcuts[i];
+        if (binding.key == SDLK_UNKNOWN || binding.modifiers != modifierMask ||
+            (event->keysym.sym != binding.key && event->keysym.scancode != SDL_GetScancodeFromKey(binding.key))) continue;
+
+        m_LlRemoteShortcutRelease = event->keysym.scancode;
+        if (i == 0) {
+            performSpecialKeyCombo(KeyComboUngrabInput);
+        } else {
+            raiseAllKeys();
+            fputs(i == 1 ? "LLREMOTE_SHORTCUT_DISCONNECT\\n" : "LLREMOTE_SHORTCUT_DISPLAY\\n", stdout);
+            fflush(stdout);
+        }
+        return true;
+    }
+    return false;
+}
+
+void SdlInputHandler::handleKeyEvent(SDL_KeyboardEvent* event)''')
+replace('app/streaming/input/keyboard.cpp', '    // Check for our special key combos', '''    if (llRemoteHandleShortcut(event)) return;
+
+    // Check for our special key combos''')
 replace('app/streaming/video/ffmpeg.cpp', '#include "ffmpeg.h"', '#include "ffmpeg.h"\n#include "../../llremote/llremotebridge.h"')
 replace('app/streaming/video/ffmpeg.cpp', '        if (Session::get()->getOverlayManager().isOverlayEnabled(Overlay::OverlayDebug)) {', '        if (Session::get()->getOverlayManager().isOverlayEnabled(Overlay::OverlayDebug) || !qgetenv("LLREMOTE_PIPE_NAME").isEmpty()) {')
 replace('app/streaming/video/ffmpeg.cpp', '            stringifyVideoStats(lastTwoWndStats,', '            LLRemoteBridge::publishMetrics(lastTwoWndStats);\n            stringifyVideoStats(lastTwoWndStats,')

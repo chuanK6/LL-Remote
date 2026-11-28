@@ -2,6 +2,7 @@ use crate::{
     engines::{command, EnginePaths},
     error::{AppError, ErrorCode, Result},
     model::{Metrics, PublishedApp, StreamPreferences},
+    shortcuts::{ShortcutAction, Shortcuts},
 };
 use serde_json::{json, Value};
 use std::{
@@ -97,6 +98,7 @@ fn decode_cli_output(bytes: &[u8]) -> Cow<'_, str> {
 pub struct StreamProcess {
     pub child: Child,
     pub verified: Arc<AtomicBool>,
+    pub shortcut_events: tokio::sync::mpsc::Receiver<ShortcutAction>,
 }
 #[derive(Clone)]
 pub struct MoonlightAdapter {
@@ -259,6 +261,7 @@ impl MoonlightAdapter {
         preferences: &StreamPreferences,
         pipe_name: &str,
         token: &str,
+        shortcuts: &Shortcuts,
     ) -> Result<StreamProcess> {
         let executable = self.paths.executable(&self.paths.manifest.moonlight)?;
         let mut process = command(&executable, executable.parent().unwrap());
@@ -272,6 +275,7 @@ impl MoonlightAdapter {
             .env("LLREMOTE_TARGET_UUID", host_uuid.unwrap_or_default())
             .env("LLREMOTE_PIPE_NAME", pipe_name)
             .env("LLREMOTE_SESSION_TOKEN", token)
+            .env("LLREMOTE_SHORTCUTS", serde_json::to_string(shortcuts)?)
             .env("LLREMOTE_AUDIO_DEVICE", &preferences.audio_device)
             .env("LLREMOTE_AUDIO_VOLUME", preferences.volume.to_string())
             .env(
@@ -288,19 +292,23 @@ impl MoonlightAdapter {
             )
         })?;
         let verified = Arc::new(AtomicBool::new(false));
+        let (shortcut_sender, shortcut_events) = tokio::sync::mpsc::channel(8);
         if let Some(stdout) = child.stdout.take() {
             let ready = verified.clone();
             tokio::spawn(async move {
                 let mut reader = BufReader::new(stdout).lines();
                 while let Ok(Some(line)) = reader.next_line().await {
-                    if line == "LLREMOTE_STREAM_READY" {
-                        ready.store(true, Ordering::SeqCst);
+                    match line.as_str() {
+                        "LLREMOTE_STREAM_READY" => ready.store(true, Ordering::SeqCst),
+                        "LLREMOTE_SHORTCUT_DISCONNECT" => { let _ = shortcut_sender.try_send(ShortcutAction::Disconnect); }
+                        "LLREMOTE_SHORTCUT_DISPLAY" => { let _ = shortcut_sender.try_send(ShortcutAction::Display); }
+                        _ => {}
                     }
                     // Never forward native stdout or request data to the app log.
                 }
             });
         }
-        Ok(StreamProcess { child, verified })
+        Ok(StreamProcess { child, verified, shortcut_events })
     }
     pub fn open_settings(&self) -> Result<Option<String>> {
         let executable = self.paths.executable(&self.paths.manifest.moonlight)?;

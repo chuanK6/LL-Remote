@@ -13,8 +13,8 @@ interface SavedDeviceCard {
   peerCode: string | null
   to: RouteLocationRaw
 }
-defineProps<{ items: SavedDeviceCard[]; disabled?: boolean }>()
-defineEmits<{ delete: [deviceId: string] }>()
+defineProps<{ items: SavedDeviceCard[]; deleteLabel: string; disabled?: boolean }>()
+defineEmits<{ delete: [itemId: string] }>()
 </script>
 
 <template>
@@ -30,7 +30,7 @@ defineEmits<{ delete: [deviceId: string] }>()
         <div class="saved-device-time"><Clock3 :size="14" aria-hidden="true" /><time :datetime="item.connectedAt || undefined">{{ item.connectedAt ? formatTime(item.connectedAt) : '时间未记录' }}</time></div>
         <ChevronRight class="saved-device-arrow" :size="21" aria-hidden="true" />
       </RouterLink>
-      <button type="button" class="saved-device-delete" :aria-label="`删除 ${deviceName(item.device)}`" title="直接删除设备和全部连接记录" :disabled="disabled" @click.stop="$emit('delete', item.device.id)"><Trash2 :size="18" aria-hidden="true" /></button>
+      <button type="button" class="saved-device-delete" :aria-label="`${deleteLabel} · ${deviceName(item.device)}`" :title="deleteLabel" :disabled="disabled" @click.stop="$emit('delete', item.id)"><Trash2 :size="18" aria-hidden="true" /></button>
     </li>
   </ol>
 </template>

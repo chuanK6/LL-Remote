@@ -3,7 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Monitor, AudioLines, Activity, MoreVertical, ArrowLeft, ArrowRight, Plus, Gamepad2, MonitorUp, ChevronDown, Star } from 'lucide-vue-next'
 import { bridge } from '../bridge'
-import { deviceName, formatTime, hasActiveDeviceSession, sourceLabel, stageLabel, statusLabel } from '../domain'
+import { deviceName, formatTime, hasActiveDeviceSession, onlineDeviceName, sourceLabel, stageLabel, statusLabel } from '../domain'
 import { useAppStore } from '../stores/app'
 import DeviceWallpaper from '../components/DeviceWallpaper.vue'
 import DeviceEditor from '../components/DeviceEditor.vue'
@@ -22,6 +22,11 @@ const device = computed(() => {
   return app.snapshot.devices.find(device => device.id === id)
 })
 const recordedAt = computed(() => record.value?.connectedAt || device.value?.lastConnectedAt)
+const heading = computed(() => {
+  const selected = device.value
+  if (!selected) return ''
+  return !historyDetail.value && selected.accountOnline ? onlineDeviceName(selected) : deviceName(selected)
+})
 const session = computed(() => device.value && hasActiveDeviceSession(device.value.id, app.snapshot.session) ? app.snapshot.session : null)
 const streaming = computed(() => session.value?.stage === 'streaming')
 const networkConnected = computed(() => device.value?.networkConnected === true)
@@ -32,6 +37,10 @@ async function connect(application = 'Desktop') {
   const deviceId = device.value?.id
   if (!deviceId) return
   await app.connect({ deviceId, app: application })
+  if (device.value?.source === 'direct') {
+    if (app.error?.code === 'ADDRESS_REQUIRED') await router.push({ name: 'direct', query: { device: deviceId } })
+    return
+  }
   if (app.error?.reauthenticate || app.error?.code === 'ADDRESS_REQUIRED') await router.push({ path: '/assist', query: { mode: 'other', device: deviceId } })
   if (app.error?.code === 'LOGIN_REQUIRED') await router.push('/login')
 }
@@ -59,14 +68,16 @@ function showHistory() { if (device.value) return router.push({ path: '/history'
   <button v-if="historyDetail" class="history-return" @click="backToHistory"><ArrowLeft :size="17" aria-hidden="true" />{{ favoriteDetail ? '返回收藏设备' : '返回连接记录' }}</button>
   <template v-if="device"><div class="device-header">
     <span v-if="!historyDetail" :class="['online-pill', { offline: !streaming && !networkConnected && !device.accountOnline && device.status !== 'online' }]"><i/>{{ statusLabel(streaming || networkConnected || device.accountOnline ? 'online' : device.status) }}</span>
-    <h1>{{ deviceName(device) }}</h1>
+    <h1>{{ heading }}</h1>
     <button class="favorite-button" :class="{ favorited: device.favorite }" :aria-label="device.favorite ? '取消收藏' : '收藏设备'" :title="device.favorite ? '取消收藏' : '收藏设备'" :aria-pressed="device.favorite" :disabled="app.loading" @click="toggleFavorite"><Star :size="23" :fill="device.favorite ? 'currentColor' : 'none'" :stroke-width="1.7" aria-hidden="true" /></button>
     <button class="more" aria-label="编辑设备" @click="editing = true"><MoreVertical :size="24"/></button></div>
     <div v-if="historyDetail || !streaming" class="device-source-line">
       <span v-if="historyDetail">{{ favoriteDetail ? '收藏设备' : record?.method || '连接记录' }}<template v-if="recordedAt"> · {{ formatTime(recordedAt) }}</template><template v-if="device.peerCode"> · 识别码 {{ device.peerCode }}</template></span>
       <span v-else>{{ device.accountOnline ? '同账号设备' : sourceLabel(device.source) }}<template v-if="device.peerCode"> · {{ device.peerCode }}</template><template v-if="device.lastConnectedAt"> · 最近连接 {{ formatTime(device.lastConnectedAt) }}</template></span>
+      <button v-if="device.source === 'direct' && !session" @click="router.push({ name: 'direct', query: { device: device.id } })">更换直连地址</button>
       <button v-if="!historyDetail" @click="showHistory">连接记录 →</button>
     </div>
+    <p v-if="!historyDetail && device.accountOnline && device.note" class="setting-detail device-note">{{ device.note }}</p>
     <div v-if="historyDetail && (session || networkConnected)" class="record-session-actions">
       <button v-if="streaming" class="secondary" :disabled="app.loading" @click="app.run(() => bridge.showSession())">会话设置</button>
       <button class="secondary" :disabled="app.loading" @click="app.disconnectDevice(device.id)">断开连接</button>
@@ -100,7 +111,7 @@ function showHistory() { if (device.value) return router.push({ path: '/history'
           <button class="primary" :disabled="app.loading" @click="app.run(() => bridge.showRemoteWindow())">显示远控窗口</button>
         </div>
       </div>
-      <button v-else class="cover" type="button" :aria-label="`进入 ${deviceName(device)} 的桌面`" :disabled="app.busy || app.loading" @click="connect()"><DeviceWallpaper :path="device.wallpaper"/><span class="enter">{{ session ? '连接进行中' : '进入桌面' }}<ArrowRight :size="29"/></span></button>
+      <button v-else class="cover" type="button" :aria-label="`进入 ${heading} 的桌面`" :disabled="app.busy || app.loading" @click="connect()"><DeviceWallpaper :path="device.wallpaper"/><span class="enter">{{ session ? '连接进行中' : '进入桌面' }}<ArrowRight :size="29"/></span></button>
       <div class="tools"><button class="tool" @click="router.push('/app/moonlight')"><Monitor class="icon"/>画质设置</button><button class="tool" @click="router.push({ path: '/app/moonlight', query: { section: 'input' } })"><AudioLines class="icon"/>输入与声音</button><button class="tool" @click="router.push({ path: '/diagnostics', query: { device: device.id } })"><Activity class="icon"/>连接诊断</button></div>
     </section>
     <h2 class="quick-title">快速启动</h2><section class="quick-area"><button v-for="name in quickApps" :key="name" class="quick-card" :disabled="app.busy || app.loading" @click="connect(name)"><span class="quick-icon"><Monitor v-if="name === 'Desktop'" :size="39"/><Gamepad2 v-else :size="39"/></span>{{ name }}</button><button class="quick-card" @click="router.push(`/quick-apps/${device.id}`)"><span class="add-circle"><Plus :size="27"/></span>添加</button></section>
@@ -116,6 +127,7 @@ function showHistory() { if (device.value) return router.push({ path: '/history'
   </template>
 </template>
 <style scoped>
+.device-note { overflow-wrap: anywhere; }
 .device-header { min-width: 0; height: auto; min-height: 38px; gap: 12px; }
 .device-header h1 { min-width: 0; overflow-wrap: anywhere; }
 .device-header .more { margin-left: auto; flex-shrink: 0; }

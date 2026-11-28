@@ -1,0 +1,49 @@
+{
+    "version":  "0.1.16",
+    "date":  "2026-11-28",
+    "timezone":  "Asia/Shanghai",
+    "status":  "Local correction for user acceptance",
+    "changes":  [
+                    "Normalize Sunshine executable drive paths for Windows firewall rules",
+                    "Verify the current profile policy and active TCP/UDP exceptions and preserve operation phases and native error codes",
+                    "Provide IPv4 and bracketed IPv6 examples",
+                    "Clarify the existing keep-display-awake setting",
+                    "Delete a single selected history entry while preserving device data; full deletion is limited to the favorites UI"
+                ],
+    "productVersion":  "0.1.16",
+    "executableSha256":  "c64f4ddaef8c08ac7f5bd077511a866170217be03e1de0a4e89c573f03d9cd8a",
+    "directFirewallHelperSha256":  "d02732e48796c2e1f7613fd2081b0a3e58064acf2f50cd2e5a7c20a4bafdec68",
+    "portableBundleVerification":  {
+                                       "checkedNativeBinaries":  138,
+                                       "bundledWebView2Binaries":  0,
+                                       "webview2Delivery":  "system-evergreen",
+                                       "nestedQtPluginsChecked":  true,
+                                       "pinnedComponentHashesMatch":  true,
+                                       "resourceFilesCompared":  1597,
+                                       "nsisBundleMarkerAccepted":  false,
+                                       "missingDependencies":  0,
+                                       "systemBaseline":  "Current local Windows; clean Windows acceptance deferred"
+                                   },
+    "firewallFixture":  [
+                            "LAN rule scope and drive path normalization",
+                            "Removal of owned rules",
+                            "TCP rollback after simulated UDP failure",
+                            "Local-rule policy denial"
+                        ],
+    "windowsReadOnly":  "Adapter enumeration completed successfully. No real rule was added or removed during verification.",
+    "desktopOrEngineTestsExecuted":  false,
+    "githubPublished":  false,
+    "acceptancePending":  [
+                              "Administrator firewall writes and LAN connection on the reported machine",
+                              "Monitor sleep and Sunshine capture on the affected desktop",
+                              "History and favorites deletion semantics"
+                          ],
+    "delivery":  {
+                     "directory":  "release/LLRemote-Portable-x64-0.1.16",
+                     "archive":  "release/LLRemote-Portable-x64-0.1.16.zip",
+                     "sha256":  "f84bcec98efe857a948fe3108b185bdcf1a8eea717c7b58dd9e6015113406f73",
+                     "bytes":  187790976,
+                     "existingDataModified":  false,
+                     "temporaryPackageRemoved":  true
+                 }
+}

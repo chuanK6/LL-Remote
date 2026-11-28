@@ -1,6 +1,6 @@
 [package]
 name = "ll-remote"
-version = "0.1.15"
+version = "0.1.16"
 edition = "2021"
 description = "LL远程 Windows 桌面应用"
 default-run = "LLRemote"

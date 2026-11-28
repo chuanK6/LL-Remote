@@ -1,7 +1,7 @@
-import type { Account, AppError, Device, SessionPatch, SessionSnapshot, StreamPreferences } from './types'
+import type { Account, AppError, Device, SessionPatch, SessionSnapshot, SigninStatus, StreamPreferences } from './types'
 
 export const statusLabel = (status: string): string => ({ online: '在线', offline: '离线', unknown: '状态未知', pending: '服务未就绪' }[status] || '状态未知')
-export const sourceLabel = (source: string): string => ({ account: '同账号设备', code: '识别码历史', existing: '已有连接' }[source] || '已有连接')
+export const sourceLabel = (source: string): string => ({ account: '同账号设备', code: '识别码历史', existing: '已有连接', direct: 'IP 直连' }[source] || '已有连接')
 export const stageLabel = (stage: string): string => ({ awaitingRoleSwitch: '\u7b49\u5f85\u786e\u8ba4\u81ea\u52a8\u5207\u6362\u89d2\u8272', idle: '尚未连接', preparingNetwork: '正在建立皎月连网络', checkingHost: '正在检查 Sunshine', checkingPairing: '正在检查配对', pairing: '等待首次配对确认', startingStream: '正在启动远程桌面', streaming: '远程桌面已启动', reconnecting: '正在恢复连接', disconnecting: '正在断开本次连接', disconnectFailed: '皎月连断开未确认', failed: '连接未完成', canceled: '已取消连接', disconnected: '本次连接已结束' }[stage] || '正在连接')
 export const isConnecting = (stage: string): boolean => ['awaitingRoleSwitch', 'preparingNetwork', 'checkingHost', 'checkingPairing', 'pairing', 'startingStream', 'reconnecting'].includes(stage)
 export function hasActiveDeviceSession(deviceId: string, session: SessionSnapshot): boolean {
@@ -19,7 +19,21 @@ export function formatTime(value: string | null): string {
   if (!Number.isFinite(date.getTime())) return '—'
   return new Intl.DateTimeFormat('zh-CN', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Asia/Shanghai', hour12: false }).format(date)
 }
+export function signinState(status: SigninStatus | null, now: number) {
+  const expires = Date.parse(status?.expiresAt ?? '')
+  if (Number.isFinite(expires)) {
+    return expires - now <= 2 * 60 * 60 * 1000 ? 'available' : 'active'
+  }
+  const available = Date.parse(status?.availableAt ?? '')
+  if (Number.isFinite(available)) return available <= now ? 'available' : 'active'
+  return 'unknown'
+}
 export function deviceName(device: Device): string { return device.displayName || device.hostName || '未命名设备' }
+export function onlineDeviceName(device: Device): string { return device.accountHostName?.trim() || deviceName(device) }
+export function remainingServiceMinutes(expiresAt: string | null | undefined, now: number): number {
+  const expires = Date.parse(expiresAt ?? '')
+  return Number.isFinite(expires) ? Math.max(0, Math.ceil((expires - now) / 60_000)) : 0
+}
 export function retainDeviceOrder(previous: readonly Device[], incoming: readonly Device[]): Device[] {
   const remaining = new Map(incoming.map(device => [device.id, device]))
   const ordered: Device[] = []

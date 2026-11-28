@@ -77,7 +77,7 @@ impl AppError {
         } else if message.contains("到期") || message.contains("已过期") {
             Self::new(
                 ErrorCode::ServiceExpired,
-                "皎月连服务已到期，请前往官网签到或检查套餐。",
+                "皎月连服务已到期，请点击签到或检查套餐。",
             )
         } else if message.contains("时长不足") || message.contains("余额不足") {
             Self::new(

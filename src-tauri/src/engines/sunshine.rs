@@ -1017,6 +1017,92 @@ impl SunshineAdapter {
     pub fn config_url(&self) -> Result<String> {
         Ok(format!("https://127.0.0.1:{}/config", self.port()?))
     }
+    pub async fn direct_addresses(&self) -> Result<Vec<String>> {
+        let report = self.direct_firewall("list", None).await?;
+        serde_json::from_value(report["addresses"].clone()).map_err(|_| {
+            AppError::new(ErrorCode::SystemFailed, "Windows 没有返回可用的直连网卡地址。")
+        })
+    }
+
+    fn direct_firewall_marker(&self) -> PathBuf {
+        self.data_root.join("network-firewall/sunshine-direct.active")
+    }
+
+    pub async fn prepare_direct_firewall(&self, ip: &str, port: u16, internet: bool) -> Result<()> {
+        self.restore_direct_firewall().await?;
+        let marker = self.direct_firewall_marker();
+        fs::create_dir_all(marker.parent().expect("direct firewall marker directory"))?;
+        fs::write(&marker, [])?;
+        if let Err(error) = self.direct_firewall("apply", Some((ip, port, internet))).await {
+            return match self.restore_direct_firewall().await {
+                Ok(()) => Err(error),
+                Err(cleanup) => Err(AppError::new(error.code, format!("{} 直连规则清理尚未确认。{}", error.message, cleanup.message))),
+            };
+        }
+        Ok(())
+    }
+
+    pub async fn restore_direct_firewall(&self) -> Result<()> {
+        let marker = self.direct_firewall_marker();
+        if marker.try_exists()? {
+            self.direct_firewall("remove", None).await?;
+            fs::remove_file(marker)?;
+        }
+        Ok(())
+    }
+
+    async fn direct_firewall(&self, action: &str, scope: Option<(&str, u16, bool)>) -> Result<Value> {
+        let helper = self.paths.root.join("component-tools/ConfigureSunshineDirect.ps1");
+        if !helper.is_file() {
+            return Err(AppError::new(ErrorCode::ComponentMissing, "随包直连防火墙组件缺失，请使用完整运行目录。"));
+        }
+        let mut process = command(Path::new("powershell.exe"), &self.paths.root);
+        process.args(["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File"])
+            .arg(helper).args(["-Action", action])
+            .stdout(Stdio::piped()).stderr(Stdio::null()).kill_on_drop(true);
+        if let Some((ip, port, internet)) = scope {
+            process.arg("-Program").arg(&self.executable)
+                .args(["-LocalAddress", ip, "-BasePort", &port.to_string(), "-Access", if internet { "internet" } else { "lan" }]);
+        }
+        let output = tokio::time::timeout(Duration::from_secs(40), process.output()).await
+            .map_err(|_| AppError::new(ErrorCode::Timeout, "等待 Windows 直连防火墙操作超时。"))??;
+        let report: Value = serde_json::from_slice(&output.stdout)
+            .map_err(|_| AppError::new(ErrorCode::SystemFailed, "Windows 未返回有效的直连防火墙结果。"))?;
+        if output.status.success() && report["ok"] == true {
+            return Ok(report);
+        }
+        let code = report["code"].as_str().unwrap_or("unknown");
+        let phase = report["phase"].as_str().unwrap_or("unknown");
+        let stage = match phase {
+            "program-path" => "确认 Sunshine 路径",
+            "interfaces" => "读取网卡",
+            "existing-rules" => "读取已有规则",
+            "check-policy" => "检查防火墙策略",
+            "create-tcp" => "创建 TCP 规则",
+            "create-udp" => "创建 UDP 规则",
+            "verify-rules" => "核对生效规则",
+            "remove-rules" => "移除直连规则",
+            _ => "执行直连防火墙操作",
+        };
+        let hresult = report["hresult"].as_i64().map(|value| format!("0x{:08X}", value as u32));
+        let native_error = report["nativeErrorCode"].as_i64();
+        tracing::warn!(action, code, phase, ?hresult, ?native_error, "Direct firewall operation failed");
+        let message = match code {
+            "address-not-bound" => "选择的 IP 已不在可用的本机网卡上，请刷新地址后重试。",
+            "program-invalid" => "无法确认 Sunshine 的程序路径，请检查便携包是否完整。",
+            "firewall-block" => "Windows 有优先级更高的规则阻止 Sunshine 直连端口，请检查该网卡的入站规则。",
+            "rule-conflict" => "发现同名的直连防火墙规则，请检查 Windows 防火墙。",
+            "inbound-disabled" => "所选网卡的防火墙配置已禁止入站放行规则。",
+            "local-rules-disabled" => "所选网卡的防火墙策略不允许本机创建的规则生效。",
+            "rules-ineffective" => "Windows 防火墙中未读到已生效的直连放行规则。",
+            "rules-not-removed" => "Windows 防火墙中仍有 LL远程的直连规则，请重试关闭。",
+            "access-denied" => "Windows 拒绝了直连防火墙操作。",
+            _ => "Windows 直连防火墙操作失败。",
+        };
+        let detail = hresult.map_or_else(|| stage.to_owned(), |value| format!("{stage}，{value}"));
+        Err(AppError::new(ErrorCode::SunshineUnavailable, format!("{message}（{detail}）")))
+    }
+
     pub async fn prepare_vpn_firewall(&self, local_address: &str) -> Result<()> {
         if !matches!(local_address.parse::<std::net::IpAddr>(), Ok(std::net::IpAddr::V4(ip)) if !ip.is_loopback() && !ip.is_unspecified())
         {

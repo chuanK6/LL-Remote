@@ -9,6 +9,7 @@ const app = useAppStore()
 const route = useRoute()
 const router = useRouter()
 const login = computed(() => route.name === 'login')
+const returnToDirect = computed(() => !login.value && route.query.from === 'direct')
 const mode = ref(app.snapshot.sunshine.accountInitialized ? 'existing' : 'create')
 const username = ref(login.value ? app.snapshot.account.username || '' : app.snapshot.preferences.sunshineUsername || 'sunshine')
 const reusingLogin = computed(() => login.value && app.snapshot.account.authenticated && username.value.trim() === app.snapshot.account.username)
@@ -40,7 +41,7 @@ watch(() => app.snapshot.account.updatedAt, readPasswords)
 watch(() => app.snapshot.sunshine.accountInitialized, initialized => { if (!login.value && initialized && mode.value === 'create') mode.value = 'existing' })
 async function continueLogin() {
   await app.refresh()
-  if (active && app.snapshot.preferences.setupComplete) await router.push(app.onboardingPath)
+  if (active && app.snapshot.preferences.setupComplete) await router.push(returnToDirect.value ? '/direct' : app.onboardingPath)
 }
 async function submit() {
   validation.value = ''
@@ -68,7 +69,7 @@ async function submit() {
     if (!active || !saved) return
     app.apply(saved)
   }
-  await router.push(result.account.authenticated ? '/assist' : '/login')
+  await router.push(returnToDirect.value ? '/direct' : result.account.authenticated ? '/assist' : '/login')
 }
 async function authorize() {
   const result = await app.run(() => bridge.authorize(localPassword.value))
@@ -79,7 +80,7 @@ onBeforeUnmount(() => { active = false; password.value = ''; confirm.value = '';
 </script>
 <template><div class="setup-stepper"><span :class="{ current: !login, complete: app.snapshot.preferences.setupComplete }">1 Sunshine 管理账号{{ app.snapshot.preferences.setupComplete ? ' ✓' : '' }}</span><span :class="{ current: login, complete: app.snapshot.account.authenticated }">2 皎月连登录{{ app.snapshot.account.authenticated ? ' ✓' : '' }}</span><span>3 设备连接</span></div><PageHeading :title="login ? '登录皎月连' : app.snapshot.preferences.setupComplete ? 'Sunshine 管理账号' : '首次使用 · 设置 Sunshine 账号'" :description="login ? '使用皎月连账号获取在线主机，已有登录状态会自动复用。' : '创建或验证本机管理账号；高级设置中的账号状态会自动同步。'"/>
   <FeedbackMessage v-if="!login && app.snapshot.preferences.setupComplete" message="Sunshine 管理账号已设置，可以继续登录皎月连。在 LL 内确认 PIN 或修改采集设置时，可在此验证并保存管理凭据。" kind="success"/>
-  <div v-if="!login && app.snapshot.preferences.setupComplete" class="page-actions start"><button type="button" class="primary" :disabled="app.loading" @click="continueLogin">{{ app.snapshot.account.authenticated ? '进入设备列表' : '继续登录皎月连' }}</button></div>
+  <div v-if="!login && app.snapshot.preferences.setupComplete" class="page-actions start"><button type="button" class="primary" :disabled="app.loading" @click="continueLogin">{{ returnToDirect ? '返回 IP 直连' : app.snapshot.account.authenticated ? '进入设备列表' : '继续登录皎月连' }}</button></div>
   <FeedbackMessage v-if="login && app.snapshot.preferences.setupComplete" message="第一步已完成，已同步 Sunshine 的实际账号状态。" kind="success"/>
   <div v-if="login && !app.snapshot.preferences.setupComplete" class="inline-confirm"><span>Sunshine 管理账号尚未设置。</span><button type="button" class="tiny-button" @click="router.push('/setup')">设置 Sunshine 管理账号</button></div>
   <FeedbackMessage v-if="!login && app.snapshot.sunshine.external && !app.snapshot.sunshine.running" message="Sunshine 服务尚未启动，保存或验证账号时会由 LL远程请求 Windows 授权并完成启动。"/>
